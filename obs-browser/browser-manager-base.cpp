@@ -10,6 +10,7 @@
 #include "browser-render-handler.hpp"
 #include "browser-load-handler.hpp"
 #include "browser-obs-bridge-base.hpp"
+#include "browser-version.h"
 
 BrowserManager::BrowserManager()
 : pimpl(new BrowserManager::Impl())
@@ -468,6 +469,7 @@ void BrowserManager::Impl::BrowserManagerEntry()
 		settings.log_severity = LOGSEVERITY_VERBOSE;
 		settings.windowless_rendering_enabled = true;
 		settings.no_sandbox = true;
+		CefString(&settings.user_agent).FromASCII(OBS_BROWSER_AGENT);
 		CefString(&settings.cache_path).FromASCII(obs_module_config_path(""));
 		CefString(&settings.browser_subprocess_path) = getBootstrap();
 		CefRefPtr<BrowserApp> app(new BrowserApp());
