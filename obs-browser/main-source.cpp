@@ -24,11 +24,11 @@
 static void browser_source_get_defaults(obs_data_t *settings)
 {
 	obs_data_set_default_string(settings, "url",
-			"http://www.obsproject.com");
+			"https://streamlabs.com");
 	obs_data_set_default_int(settings, "width", 800);
 	obs_data_set_default_int(settings, "height", 600);
 	obs_data_set_default_int(settings, "fps", 30);
-	obs_data_set_default_bool(settings, "shutdown", false);
+	obs_data_set_default_bool(settings, "shutdown", true);
 	obs_data_set_default_bool(settings, "restart_when_active", false);
 	obs_data_set_default_string(settings, "css", "body { background-color: rgba(0, 0, 0, 0); margin: 0px auto; overflow: hidden; }");
 }
@@ -50,7 +50,7 @@ static bool refreshnocache_button_clicked(obs_properties_t *props,
 	BrowserSource *bs = static_cast<BrowserSource *>(data);
 
 	BrowserManager::Instance()->RefreshPageNoCache(bs->GetBrowserIdentifier());
-	
+
 	return true;
 }
 
@@ -231,7 +231,7 @@ static void browser_source_mouse_click(void *data,
 	bs->SendMouseClick(event, type, mouse_up, click_count);
 
 	blog(LOG_DEBUG,
-		"mouse_click x:%d y:%d mouse_up:'%s' count:'%d'", event->x, 
+		"mouse_click x:%d y:%d mouse_up:'%s' count:'%d'", event->x,
 		event->y, mouse_up ? "true" : "false", click_count);
 }
 
@@ -263,7 +263,7 @@ static void browser_source_key_click(void *data,
 }
 
 struct obs_source_info
-create_browser_source_info() 
+create_browser_source_info()
 {
 	struct obs_source_info browser_source_info = { 0 };
 
