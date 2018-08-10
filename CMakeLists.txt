@@ -17,6 +17,7 @@ endif()
 
 option(EXPERIMENTAL_SHARED_TEXTURE_SUPPORT "Enable shared texture support for the browser plugin (Win32)" ON)
 option(BROWSER_PANEL_SUPPORT "Enables Qt web browser panel support" ON)
+option(BROWSER_FRONTEND_API_SUPPORT "Enables integration with obs-frontend-api library" ON)
 
 if (EXPERIMENTAL_SHARED_TEXTURE_SUPPORT)
 	set(EXPERIMENTAL_SHARED_TEXTURE_SUPPORT_ENABLED)
@@ -29,6 +30,9 @@ if(APPLE)
 	endif()
 endif()
 
+if (BROWSER_FRONTEND_API_SUPPORT)
+	set(BROWSER_FRONTEND_API_SUPPORT_ENABLED)
+endif()
 configure_file(
 	"${CMAKE_CURRENT_SOURCE_DIR}/browser-config.h.in"
 	"${CMAKE_CURRENT_BINARY_DIR}/browser-config.h")
@@ -83,7 +87,7 @@ set(obs-browser_HEADERS
 
 # only allow browser panels on win32 for now -- other operating systems
 # need more testing
-if(WIN32 AND BROWSER_PANEL_SUPPORT)
+if(WIN32 AND BROWSER_PANEL_SUPPORT AND BROWSER_FRONTEND_API_SUPPORT)
 	if(DEFINED QTDIR${_lib_suffix})
 		list(APPEND CMAKE_PREFIX_PATH "${QTDIR${_lib_suffix}}")
 	elseif(DEFINED QTDIR)
