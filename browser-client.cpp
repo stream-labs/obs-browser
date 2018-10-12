@@ -147,16 +147,15 @@ bool BrowserClient::OnProcessMessageReceived(
 	return true;
 }
 
-bool BrowserClient::GetViewRect(
+void BrowserClient::GetViewRect(
 		CefRefPtr<CefBrowser>,
 		CefRect &rect)
 {
 	if (!bs) {
-		return false;
+		rect.Set(0, 0, 0, 0);
+	} else {
+		rect.Set(0, 0, bs->width, bs->height);
 	}
-
-	rect.Set(0, 0, bs->width, bs->height);
-	return true;
 }
 
 void BrowserClient::OnPaint(

@@ -98,7 +98,7 @@ public:
 			CefRefPtr<CefMenuModel> model) override;
 
 	/* CefRenderHandler */
-	virtual bool GetViewRect(
+	virtual void GetViewRect(
 			CefRefPtr<CefBrowser> browser,
 			CefRect &rect) override;
 	virtual void OnPaint(
