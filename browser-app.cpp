@@ -46,7 +46,9 @@ CefRefPtr<CefBrowserProcessHandler> BrowserApp::GetBrowserProcessHandler()
 void BrowserApp::OnRegisterCustomSchemes(
 		CefRawPtr<CefSchemeRegistrar> registrar)
 {
-#if CHROME_VERSION_BUILD >= 3029
+#if CHROME_VERSION_BUILD >= 3683
+	registrar->AddCustomScheme("http", 1 << 0 | 1 << 4);
+#elif CHROME_VERSION_BUILD >= 3029
 	registrar->AddCustomScheme("http", true, false, false, false, true,
 			false);
 #else
