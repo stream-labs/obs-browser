@@ -13,9 +13,7 @@ struct QCefCookieManager {
 	virtual bool DeleteCookies(
 			const std::string &url,
 			const std::string &name)=0;
-	virtual bool SetStoragePath(
-			const std::string &storage_path,
-			bool persist_session_cookies = false)=0;
+
 	virtual bool FlushStore()=0;
 
 	typedef std::function<void(bool)> cookie_exists_cb;
@@ -59,9 +57,7 @@ struct QCef {
 			const std::string &url,
 			QCefCookieManager *cookie_manager = nullptr)=0;
 
-	virtual QCefCookieManager *create_cookie_manager(
-			const std::string &storage_path,
-			bool persist_session_cookies = false)=0;
+	virtual QCefCookieManager *create_cookie_manager()=0;
 
 	virtual BPtr<char> get_cookie_path(const std::string &storage_path)=0;
 

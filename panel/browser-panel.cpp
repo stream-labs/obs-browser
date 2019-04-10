@@ -26,11 +26,6 @@ std::vector<PopupWhitelistInfo> forced_popups;
 
 /* ------------------------------------------------------------------------- */
 
-CefRefPtr<CefCookieManager> QCefRequestContextHandler::GetCookieManager()
-{
-	return cm;
-}
-
 class CookieCheck : public CefCookieVisitor {
 public:
 	QCefCookieManager::cookie_exists_cb callback;
@@ -74,27 +69,14 @@ struct QCefCookieManagerInternal : QCefCookieManager {
 	CefRefPtr<CefRequestContextHandler> rch;
 	CefRefPtr<CefRequestContext> rc;
 
-	QCefCookieManagerInternal(
-			const std::string &storage_path,
-			bool persist_session_cookies)
+	QCefCookieManagerInternal()
 	{
 		if (os_event_try(cef_started_event) != 0)
 			throw "Browser thread not initialized";
 
-		BPtr<char> path = obs_module_config_path(storage_path.c_str());
-
-		cm = CefCookieManager::CreateManager(
-				path.Get(),
-				persist_session_cookies,
-				nullptr);
-		if (!cm)
-			throw "Failed to create cookie manager";
-
-		rch = new QCefRequestContextHandler(cm);
-
-		rc = CefRequestContext::CreateContext(
-				CefRequestContext::GetGlobalContext(),
-				rch);
+		rc = CefRequestContext::GetGlobalContext();
+		rch = rc->GetHandler();
+		cm = rc->GetCookieManager(nullptr);
 	}
 
 	virtual bool DeleteCookies(
@@ -104,18 +86,6 @@ struct QCefCookieManagerInternal : QCefCookieManager {
 		return cm->DeleteCookies(
 				url,
 				name,
-				nullptr);
-	}
-
-	virtual bool SetStoragePath(
-			const std::string &storage_path,
-			bool persist_session_cookies) override
-	{
-		BPtr<char> path = obs_module_config_path(storage_path.c_str());
-
-		return cm->SetStoragePath(
-				path.Get(),
-				persist_session_cookies,
 				nullptr);
 	}
 
@@ -289,9 +259,7 @@ struct QCefInternal : QCef {
 			const std::string &url,
 			QCefCookieManager *cookie_manager) override;
 
-	virtual QCefCookieManager *create_cookie_manager(
-			const std::string &storage_path,
-			bool persist_session_cookies) override;
+	virtual QCefCookieManager *create_cookie_manager() override;
 
 	virtual BPtr<char> get_cookie_path(
 			const std::string &storage_path) override;
@@ -337,14 +305,10 @@ QCefWidget *QCefInternal::create_widget(
 			cmi ? cmi->rc : nullptr);
 }
 
-QCefCookieManager *QCefInternal::create_cookie_manager(
-		const std::string &storage_path,
-		bool persist_session_cookies)
+QCefCookieManager *QCefInternal::create_cookie_manager()
 {
 	try {
-		return new QCefCookieManagerInternal(
-				storage_path,
-				persist_session_cookies);
+		return new QCefCookieManagerInternal();
 	} catch (const char *error) {
 		blog(LOG_ERROR, "Failed to create cookie manager: %s", error);
 		return nullptr;
