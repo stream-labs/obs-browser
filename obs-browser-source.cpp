@@ -144,6 +144,9 @@ bool BrowserSource::CreateBrowser()
 				browserClient,
 				url,
 				cefBrowserSettings,
+#if CHROME_VERSION_BUILD >= 3770
+				nullptr,
+#endif
 				nullptr);
 #if CHROME_VERSION_BUILD >= 3683
 		cefBrowser->GetHost()->SetAudioMuted(true);

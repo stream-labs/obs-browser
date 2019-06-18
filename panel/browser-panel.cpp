@@ -184,6 +184,9 @@ void QCefWidgetInternal::Init()
 				browserClient,
 				url,
 				cefBrowserSettings,
+#if CHROME_VERSION_BUILD >= 3770
+				nullptr,
+#endif
 				rqc);
 #ifdef _WIN32
 		Resize();
