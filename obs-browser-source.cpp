@@ -303,7 +303,11 @@ void BrowserSource::SetShowing(bool showing)
 				CefProcessMessage::Create("Visibility");
 			CefRefPtr<CefListValue> args = msg->GetArgumentList();
 			args->SetBool(0, showing);
+#if CHROME_VERSION_BUILD >= 3770
+			cefBrowser->GetMainFrame()->SendProcessMessage(PID_RENDERER, msg);
+#else
 			cefBrowser->SendProcessMessage(PID_RENDERER, msg);
+#endif
 		}, true);
 	}
 
@@ -324,7 +328,11 @@ void BrowserSource::SetActive(bool active)
 			CefProcessMessage::Create("Active");
 		CefRefPtr<CefListValue> args = msg->GetArgumentList();
 		args->SetBool(0, active);
+#if CHROME_VERSION_BUILD >= 3770
+		cefBrowser->GetMainFrame()->SendProcessMessage(PID_RENDERER, msg);
+#else
 		cefBrowser->SendProcessMessage(PID_RENDERER, msg);
+#endif
 	}, true);
 }
 
@@ -462,6 +470,10 @@ void DispatchJSEvent(std::string eventName, std::string jsonString)
 
 		args->SetString(0, eventName);
 		args->SetString(1, jsonString);
+#if CHROME_VERSION_BUILD >= 3770
+		cefBrowser->GetMainFrame()->SendProcessMessage(PID_RENDERER, msg);
+#else
 		cefBrowser->SendProcessMessage(PID_RENDERER, msg);
+#endif
 	});
 }

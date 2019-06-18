@@ -133,6 +133,9 @@ void BrowserApp::ExecuteJSFunction(CefRefPtr<CefBrowser> browser,
 }
 
 bool BrowserApp::OnProcessMessageReceived(CefRefPtr<CefBrowser> browser,
+#if CHROME_VERSION_BUILD >= 3770
+		CefRefPtr<CefFrame> frame,
+#endif
 		CefProcessId source_process,
 		CefRefPtr<CefProcessMessage> message)
 {
@@ -250,8 +253,11 @@ bool BrowserApp::Execute(const CefString &name,
 
 		CefRefPtr<CefBrowser> browser =
 			CefV8Context::GetCurrentContext()->GetBrowser();
+#if CHROME_VERSION_BUILD >= 3770
+		browser->GetMainFrame()->SendProcessMessage(PID_BROWSER, msg);
+#else
 		browser->SendProcessMessage(PID_BROWSER, msg);
-
+#endif
 	} else if (name == "getStatus") {
 		if (arguments.size() == 1 && arguments[0]->IsFunction()) {
 			callbackId++;
@@ -265,8 +271,11 @@ bool BrowserApp::Execute(const CefString &name,
 
 		CefRefPtr<CefBrowser> browser =
 			CefV8Context::GetCurrentContext()->GetBrowser();
+#if CHROME_VERSION_BUILD >= 3770
+		browser->GetMainFrame()->SendProcessMessage(PID_BROWSER, msg);
+#else
 		browser->SendProcessMessage(PID_BROWSER, msg);
-
+#endif
 	} else {
 		/* Function does not exist. */
 		return false;
