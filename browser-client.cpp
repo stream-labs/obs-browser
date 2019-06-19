@@ -78,6 +78,9 @@ bool BrowserClient::OnBeforePopup(
 		CefWindowInfo &,
 		CefRefPtr<CefClient> &,
 		CefBrowserSettings&,
+#if CHROME_VERSION_BUILD >= 3770
+		CefRefPtr<CefDictionaryValue>&,
+#endif
 		bool *)
 {
 	/* block popups */

@@ -117,6 +117,9 @@ bool QCefBrowserClient::OnBeforePopup(
 		CefWindowInfo &windowInfo,
 		CefRefPtr<CefClient> &,
 		CefBrowserSettings &,
+#if CHROME_VERSION_BUILD >= 3770
+		CefRefPtr<CefDictionaryValue>&,
+#endif
 		bool *)
 {
 	std::string str_url = target_url;
