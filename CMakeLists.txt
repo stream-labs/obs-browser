@@ -46,12 +46,10 @@ include_directories("${CEF_ROOT_DIR}")
 
 # ----------------------------------------------------------------------------
 
-if(NOT APPLE)
 set(obs-browser_LIBRARIES
 	libobs
-	obs-frontend-api
+#	obs-frontend-api
 	)
-endif()
 
 list(APPEND obs-browser_LIBRARIES
 	${CEF_LIBRARIES})
