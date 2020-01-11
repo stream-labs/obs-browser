@@ -25,8 +25,6 @@ endif()
 
 if(NOT APPLE)
 	option(USE_QT_LOOP "Runs CEF on the main UI thread alongside Qt instead of in its own thread" OFF)
-else()
-	set(USE_QT_LOOP TRUE)
 endif()
 
 if(APPLE)
