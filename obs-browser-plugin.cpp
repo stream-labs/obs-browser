@@ -84,6 +84,7 @@ public:
 					  Qt::QueuedConnection,
 					  Q_ARG(MessageTask, task));
 #else
+		blog(LOG_INFO, "Execute task");
 		task();
 #endif
 	}
@@ -210,6 +211,7 @@ static CefRefPtr<BrowserApp> app;
 
 static void BrowserInit(void)
 {
+	blog(LOG_INFO, "BrowserInit - start");
 	string path = obs_get_module_binary_path(obs_current_module());
 	path = path.substr(0, path.find_last_of('/') + 1);
 	path += "//obs-browser-page";
@@ -281,6 +283,7 @@ static void BrowserInit(void)
 					new BrowserSchemeHandlerFactory());
 #endif
 	os_event_signal(cef_started_event);
+	blog(LOG_INFO, "BrowserInit - end");
 }
 
 #ifdef USE_QT_LOOP

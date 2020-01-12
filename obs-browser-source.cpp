@@ -76,6 +76,7 @@ BrowserSource::BrowserSource(obs_data_t *, obs_source_t *source_)
 
 BrowserSource::~BrowserSource()
 {
+	blog(LOG_INFO, "BrowserSource destructor");
 	DestroyBrowser();
 	DestroyTextures();
 
@@ -87,6 +88,7 @@ BrowserSource::~BrowserSource()
 
 void BrowserSource::ExecuteOnBrowser(BrowserFunc func, bool async)
 {
+	blog(LOG_INFO, "ExecuteOnBrowser");
 	if (!async) {
 #ifdef USE_QT_LOOP
 		if (QThread::currentThread() == qApp->thread()) {
@@ -95,6 +97,7 @@ void BrowserSource::ExecuteOnBrowser(BrowserFunc func, bool async)
 			return;
 		}
 #endif
+		blog(LOG_INFO, "Sync execute");
 		os_event_t *finishedEvent;
 		os_event_init(&finishedEvent, OS_EVENT_TYPE_AUTO);
 		bool success = QueueCEFTask([&]() {
@@ -107,6 +110,7 @@ void BrowserSource::ExecuteOnBrowser(BrowserFunc func, bool async)
 		}
 		os_event_destroy(finishedEvent);
 	} else {
+		blog(LOG_INFO, "Async execute");
 		CefRefPtr<CefBrowser> browser = cefBrowser;
 		if (!!browser) {
 #ifdef USE_QT_LOOP
@@ -121,7 +125,9 @@ void BrowserSource::ExecuteOnBrowser(BrowserFunc func, bool async)
 bool BrowserSource::CreateBrowser()
 {
 	return QueueCEFTask([this]() {
+		blog(LOG_INFO, "Create browser - startb");
 #if EXPERIMENTAL_SHARED_TEXTURE_SUPPORT_ENABLED
+		blog(LOG_INFO, "Share texture enabled");
 		if (hwaccel) {
 			obs_enter_graphics();
 			tex_sharing_avail = gs_shared_texture_available();
@@ -134,6 +140,7 @@ bool BrowserSource::CreateBrowser()
 		struct obs_video_info ovi;
 		obs_get_video_info(&ovi);
 
+		blog(LOG_INFO, "Create browser - 0");
 		CefRefPtr<BrowserClient> browserClient = new BrowserClient(
 			this, hwaccel && tex_sharing_avail, reroute_audio);
 
@@ -145,6 +152,7 @@ bool BrowserSource::CreateBrowser()
 		windowInfo.height = height;
 		windowInfo.windowless_rendering_enabled = true;
 
+		blog(LOG_INFO, "Create browser - 1");
 #if EXPERIMENTAL_SHARED_TEXTURE_SUPPORT_ENABLED
 		windowInfo.shared_texture_enabled = hwaccel;
 #endif
@@ -170,23 +178,34 @@ bool BrowserSource::CreateBrowser()
 		}
 #endif
 
+#if CHROME_VERSION_BUILD >= 3770
+		blog(LOG_INFO, "CEF version is >= 3770");
+#endif
+
+		blog(LOG_INFO, "Create browser - 2");
+		blog(LOG_INFO, "url: %s", url.c_str());
 		cefBrowser = CefBrowserHost::CreateBrowserSync(
 			windowInfo, browserClient, url, cefBrowserSettings,
 #if CHROME_VERSION_BUILD >= 3770
 			CefRefPtr<CefDictionaryValue>(),
 #endif
 			nullptr);
+
+		blog(LOG_INFO, "Create browser - 3");
 #if CHROME_VERSION_BUILD >= 3683
 		if (reroute_audio)
 			cefBrowser->GetHost()->SetAudioMuted(true);
 #endif
+		blog(LOG_INFO, "Create browser - 4");
 
 		SendBrowserVisibility(cefBrowser, is_showing);
+		blog(LOG_INFO, "Create browser - end");
 	});
 }
 
 void BrowserSource::DestroyBrowser(bool async)
 {
+	blog(LOG_INFO, "DestroyBrowser");
 	ExecuteOnBrowser(
 		[](CefRefPtr<CefBrowser> cefBrowser) {
 			CefRefPtr<CefClient> client =
