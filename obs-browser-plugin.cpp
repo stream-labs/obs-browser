@@ -636,10 +636,12 @@ bool obs_module_load(void)
 	obs_data_release(private_data);
 #endif
 
+#ifdef __APPLE__ // Shouldn't be needed
 	if (is_BigSur_OS()) {
 		// Make sure CEF malloc hijacking happens early in the process
 		obs_browser_initialize();
 	}
+#endif
 
 	return true;
 }
