@@ -636,9 +636,11 @@ bool obs_module_load(void)
 	obs_data_release(private_data);
 #endif
 
+#ifdef __APPLE__
 	if (is_BigSur_OS()) {
 		obs_browser_initialize();
 	}
+#endif
 
 	return true;
 }
