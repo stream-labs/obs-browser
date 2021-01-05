@@ -227,7 +227,7 @@ static CefRefPtr<BrowserApp> app;
 static void BrowserInit(void)
 {
 #if defined(__APPLE__) && defined(USE_UI_LOOP)
-	ExecuteTask([]() {
+	ExecuteSyncTask([]() {
 #endif
 		string path = obs_get_module_binary_path(obs_current_module());
 		path = path.substr(0, path.find_last_of('/') + 1);

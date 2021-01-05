@@ -49,6 +49,13 @@ void ExecuteTask(MessageTask task)
     });
 }
 
+void ExecuteSyncTask(MessageTask task)
+{
+    dispatch_sync(dispatch_get_main_queue(), ^{
+        task();
+    });
+}
+
 void DoCefMessageLoop(int ms)
 {
     dispatch_async(dispatch_get_main_queue(), ^{
