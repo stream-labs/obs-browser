@@ -25,6 +25,7 @@
 #include <functional>
 #include <thread>
 #include <mutex>
+#include "util/check-os.h"
 
 #include "obs-browser-source.hpp"
 #include "browser-scheme.hpp"
@@ -634,6 +635,11 @@ bool obs_module_load(void)
 	}
 	obs_data_release(private_data);
 #endif
+
+	if (is_BigSur_OS()) {
+		obs_browser_initialize();
+	}
+
 	return true;
 }
 
