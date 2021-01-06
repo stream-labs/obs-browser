@@ -226,9 +226,11 @@ static CefRefPtr<BrowserApp> app;
 
 static void BrowserInit(void)
 {
+	blog(LOG_INFO, "BrowserInit - 0");
 #if defined(__APPLE__) && defined(USE_UI_LOOP)
 	ExecuteSyncTask([]() {
 #endif
+		blog(LOG_INFO, "BrowserInit - 1");
 		string path = obs_get_module_binary_path(obs_current_module());
 		path = path.substr(0, path.find_last_of('/') + 1);
 		path += "//obs-browser-page";
@@ -240,12 +242,14 @@ static void BrowserInit(void)
 		* CEF */
 		struct obs_cmdline_args cmdline_args = obs_get_cmdline_args();
 		CefMainArgs args(cmdline_args.argc, cmdline_args.argv);
+		blog(LOG_INFO, "BrowserInit - 2");
 #endif
 
 		CefSettings settings;
 		settings.log_severity = LOGSEVERITY_DISABLE;
 		settings.windowless_rendering_enabled = true;
 		settings.no_sandbox = true;
+		blog(LOG_INFO, "BrowserInit - 3");
 
 #ifdef USE_UI_LOOP
 		settings.external_message_pump = true;
@@ -254,6 +258,7 @@ static void BrowserInit(void)
 
 #ifdef __APPLE__
 #ifdef BROWSER_DEPLOY
+		blog(LOG_INFO, "BrowserInit - 4");
 		std::string binPath = getExecutablePath();
 		binPath = binPath.substr(0, binPath.find_last_of('/'));
 		binPath += "/Frameworks/Chromium\ Embedded\ Framework.framework";
@@ -262,6 +267,7 @@ static void BrowserInit(void)
 		CefString(&settings.framework_dir_path) = CEF_LIBRARY;
 #endif
 #endif
+		blog(LOG_INFO, "BrowserInit - 5");
 
 		std::string obs_locale = obs_get_locale();
 		std::string accepted_languages;
@@ -273,6 +279,7 @@ static void BrowserInit(void)
 			accepted_languages = "en-US,en";
 		}
 
+		blog(LOG_INFO, "BrowserInit - 6");
 		BPtr<char> conf_path = obs_module_config_path("");
 		os_mkdir(conf_path);
 
@@ -281,6 +288,7 @@ static void BrowserInit(void)
 		* it's a different path */
 		conf_path[strlen(conf_path.Get()) - 1] = '\0';
 
+		blog(LOG_INFO, "BrowserInit - 7");
 		BPtr<char> conf_path_abs = os_get_abs_path_ptr(conf_path);
 		CefString(&settings.locale) = obs_get_locale();
 		CefString(&settings.accept_language_list) = accepted_languages;
@@ -289,14 +297,18 @@ static void BrowserInit(void)
 
 		bool tex_sharing_avail = false;
 
+		blog(LOG_INFO, "BrowserInit - 8");
 #if EXPERIMENTAL_SHARED_TEXTURE_SUPPORT_ENABLED
 		if (hwaccel) {
+			blog(LOG_INFO, "BrowserInit - 9");
 			obs_enter_graphics();
 			hwaccel = tex_sharing_avail = gs_shared_texture_available();
 			obs_leave_graphics();
+			blog(LOG_INFO, "BrowserInit - 10");
 		}
 #endif
 
+	blog(LOG_INFO, "BrowserInit - 11");
 	app = new BrowserApp(tex_sharing_avail);
 	CefExecuteProcess(args, app, nullptr);
 #ifdef _WIN32
@@ -308,16 +320,21 @@ static void BrowserInit(void)
 	 * to. */
 	uintptr_t zeroed_memory_lol[32] = {};
 	CefInitialize(args, settings, app, zeroed_memory_lol);
+	blog(LOG_INFO, "BrowserInit - 12");
 #else
+	blog(LOG_INFO, "BrowserInit - 13");
 	CefInitialize(args, settings, app, nullptr);
+	blog(LOG_INFO, "BrowserInit - 14");
 #endif
 #if !ENABLE_LOCAL_FILE_URL_SCHEME
+	blog(LOG_INFO, "BrowserInit - 15");
 		/* Register http://absolute/ scheme handler for older
 		* CEF builds which do not support file:// URLs */
 		CefRegisterSchemeHandlerFactory("http", "absolute",
 						new BrowserSchemeHandlerFactory());
 #endif
 		os_event_signal(cef_started_event);
+	blog(LOG_INFO, "BrowserInit - 16");
 #if defined(__APPLE__) && defined(USE_UI_LOOP)
 	});
 #endif
@@ -358,13 +375,18 @@ static void BrowserManagerThread(void)
 
 extern "C" EXPORT void obs_browser_initialize(void)
 {
+	blog(LOG_INFO, "obs_browser_initialize 0");
 	if (!os_atomic_set_bool(&manager_initialized, true)) {
 #ifdef USE_UI_LOOP
+	blog(LOG_INFO, "obs_browser_initialize 1");
 		BrowserInit();
+	blog(LOG_INFO, "obs_browser_initialize 2");
 #else
+	blog(LOG_INFO, "obs_browser_initialize 3");
 		manager_thread = thread(BrowserManagerThread);
 #endif
 	}
+	blog(LOG_INFO, "obs_browser_initialize 4");
 }
 
 void RegisterBrowserSource()
@@ -384,9 +406,13 @@ void RegisterBrowserSource()
 
 	info.get_name = [](void *) { return obs_module_text("BrowserSource"); };
 	info.create = [](obs_data_t *settings, obs_source_t *source) -> void * {
+		blog(LOG_INFO, "info.create - 0");
 		obs_browser_initialize();
+		blog(LOG_INFO, "info.create - 1");
 		obs_source_set_audio_mixers(source, 0xFF);
+		blog(LOG_INFO, "info.create - 2");
 		obs_source_set_monitoring_type(source, OBS_MONITORING_TYPE_MONITOR_ONLY);
+		blog(LOG_INFO, "info.create - 3");
 		return new BrowserSource(settings, source);
 	};
 	info.destroy = [](void *data) {
