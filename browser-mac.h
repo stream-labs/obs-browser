@@ -49,3 +49,4 @@ void QueueBrowserTask(CefRefPtr<CefBrowser> browser,
                     BrowserFunc func);
 bool isMainThread();
 std::string getExecutablePath();
+bool isHighThanBigSur();

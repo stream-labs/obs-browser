@@ -92,3 +92,9 @@ std::string getExecutablePath()
     _NSGetExecutablePath(path, &size);
     return path;
 }
+
+bool isHighThanBigSur()
+{
+    NSOperatingSystemVersion OSversion = [NSProcessInfo processInfo].operatingSystemVersion;
+    return OSversion.majorVersion > 10;
+}

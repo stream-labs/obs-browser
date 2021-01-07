@@ -663,7 +663,8 @@ bool obs_module_load(void)
 #endif
 
 #ifdef __APPLE__
-	obs_browser_initialize();
+	if(isHighThanBigSur())
+		obs_browser_initialize();
 #endif
 
 	return true;
