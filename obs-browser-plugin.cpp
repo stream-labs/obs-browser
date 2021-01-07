@@ -25,7 +25,6 @@
 #include <functional>
 #include <thread>
 #include <mutex>
-#include "util/check-os.h"
 
 #include "obs-browser-source.hpp"
 #include "browser-scheme.hpp"
