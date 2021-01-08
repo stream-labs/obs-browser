@@ -98,8 +98,6 @@ std::string getExecutablePath()
 bool isHighThanBigSur()
 {
     NSOperatingSystemVersion OSversion = [NSProcessInfo processInfo].operatingSystemVersion;
-    blog(LOG_INFO, "OSversion.majorVersion: %d", OSversion.majorVersion);
-    blog(LOG_INFO, "OSversion.minorVersion: %d", OSversion.minorVersion);
     return ((OSversion.majorVersion >= 10 && OSversion.minorVersion >= 16) ||
         OSversion.majorVersion >= 11);
 }
