@@ -73,18 +73,15 @@ void DispatchJSEvent(std::string eventName, std::string jsonString,
 BrowserSource::BrowserSource(obs_data_t *, obs_source_t *source_)
 	: source(source_)
 {
-	blog(LOG_INFO, "BrowserSource - 0");
 	/* defer update */
 	obs_source_update(source, nullptr);
 
-	blog(LOG_INFO, "BrowserSource - 2");
 	lock_guard<mutex> lock(browser_list_mutex);
 	p_prev_next = &first_browser;
 	next = first_browser;
 	if (first_browser)
 		first_browser->p_prev_next = &next;
 	first_browser = this;
-	blog(LOG_INFO, "BrowserSource - 1");
 }
 
 BrowserSource::~BrowserSource()
@@ -147,14 +144,12 @@ void BrowserSource::ExecuteOnBrowser(BrowserFunc func, bool async)
 
 bool BrowserSource::CreateBrowser()
 {
-	blog(LOG_INFO, "CreateBrowser 0");
 #ifdef WIN32
 	return QueueCEFTask([this]() {
 #endif
 #if defined(USE_UI_LOOP) && defined(__APPLE__)
 	ExecuteTask([this]() {
 #endif
-	blog(LOG_INFO, "CreateBrowser 1");
 #if EXPERIMENTAL_SHARED_TEXTURE_SUPPORT_ENABLED
 		if (hwaccel) {
 			obs_enter_graphics();
@@ -165,7 +160,6 @@ bool BrowserSource::CreateBrowser()
 		bool hwaccel = false;
 #endif
 
-	blog(LOG_INFO, "CreateBrowser 2");
 		CefRefPtr<BrowserClient> browserClient = new BrowserClient(
 			this, hwaccel && tex_sharing_avail, reroute_audio);
 
@@ -177,7 +171,6 @@ bool BrowserSource::CreateBrowser()
 		windowInfo.height = height;
 		windowInfo.windowless_rendering_enabled = true;
 
-	blog(LOG_INFO, "CreateBrowser 3");
 #if EXPERIMENTAL_SHARED_TEXTURE_SUPPORT_ENABLED
 		windowInfo.shared_texture_enabled = hwaccel;
 #endif
@@ -195,7 +188,6 @@ bool BrowserSource::CreateBrowser()
 		cefBrowserSettings.windowless_frame_rate = fps;
 #endif
 
-	blog(LOG_INFO, "CreateBrowser 4");
 #if ENABLE_LOCAL_FILE_URL_SCHEME
 		if (is_local) {
 			/* Disable web security for file:// URLs to allow
@@ -203,7 +195,6 @@ bool BrowserSource::CreateBrowser()
 			cefBrowserSettings.web_security = STATE_DISABLED;
 		}
 #endif
-		blog(LOG_INFO, "CreateBrowserSync - start");
 		cefBrowser = CefBrowserHost::CreateBrowserSync(
 			windowInfo, browserClient, url, cefBrowserSettings,
 #if CHROME_VERSION_BUILD >= 3770
@@ -215,7 +206,6 @@ bool BrowserSource::CreateBrowser()
 		} else {
 			blog(LOG_INFO, "CreateBrowserSync - fail");
 		}
-		blog(LOG_INFO, "CreateBrowserSync - end");
 #if CHROME_VERSION_BUILD >= 3683
 		if (reroute_audio)
 			cefBrowser->GetHost()->SetAudioMuted(true);
