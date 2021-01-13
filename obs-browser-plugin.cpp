@@ -281,10 +281,7 @@ static void BrowserInit(void)
 				conf_path[strlen(conf_path.Get()) - 1] = '\0';
 
 				BPtr<char> conf_path_abs = os_get_abs_path_ptr(conf_path);
-				CefString(&settings.locale) = obs_get_locale();
-				CefString(&settings.accept_language_list) = accepted_languages;
 				CefString(&settings.cache_path) = conf_path_abs;
-				CefString(&settings.browser_subprocess_path) = path;
 			} else {
 				blog(LOG_WARNING, "obs-browser: Could not create cache directory");
 			}
@@ -293,6 +290,10 @@ static void BrowserInit(void)
 		} else {
 			blog(LOG_INFO, "obs-browser: empty config path");
 		}
+
+		CefString(&settings.locale) = obs_get_locale();
+		CefString(&settings.accept_language_list) = accepted_languages;
+		CefString(&settings.browser_subprocess_path) = path;
 
 		bool tex_sharing_avail = false;
 
