@@ -108,12 +108,7 @@ bool QueueCEFTask(std::function<void()> task)
 
 /* ========================================================================= */
 
-static const char *default_css = "\
-body { \
-background-color: rgba(0, 0, 0, 0); \
-margin: 0px auto; \
-overflow: hidden; \
-}";
+static const char *default_css = "";
 
 static void browser_source_get_defaults(obs_data_t *settings)
 {
