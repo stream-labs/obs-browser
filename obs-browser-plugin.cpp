@@ -225,12 +225,15 @@ static CefRefPtr<BrowserApp> app;
 
 static void BrowserInit(void)
 {
+    blog(LOG_INFO, "BrowserInit");
 #if defined(__APPLE__) && defined(USE_UI_LOOP)
+    blog(LOG_INFO, "USE_UI_LOOP, executeSyncTask");
 	ExecuteSyncTask([]() {
 #endif
 		string path = obs_get_module_binary_path(obs_current_module());
 		path = path.substr(0, path.find_last_of('/') + 1);
 		path += "//obs-browser-page";
+        blog(LOG_INFO, "BrowserInit, path is %s", path.c_str());
 #ifdef _WIN32
 		path += ".exe";
 		CefMainArgs args;
@@ -239,10 +242,14 @@ static void BrowserInit(void)
 		* CEF */
 		struct obs_cmdline_args cmdline_args = obs_get_cmdline_args();
 		CefMainArgs args(cmdline_args.argc, cmdline_args.argv);
+        blog(LOG_INFO, " Pass args: %d", cmdline_args.argc);
+        for (int i=0; i < cmdline_args.argc; i++) {
+            blog(LOG_INFO, "Arg number %d value %s", i, cmdline_args.argv[i]);
+        }
 #endif
 
 		CefSettings settings;
-		settings.log_severity = LOGSEVERITY_DISABLE;
+		settings.log_severity = LOGSEVERITY_VERBOSE;
 		settings.windowless_rendering_enabled = true;
 		settings.no_sandbox = true;
 
@@ -258,6 +265,7 @@ static void BrowserInit(void)
 		binPath += "/Frameworks/Chromium\ Embedded\ Framework.framework";
 		CefString(&settings.framework_dir_path) = binPath;
 #else
+        blog(LOG_INFO, "BrowserInit, CEF_LIBRARY is %s", CEF_LIBRARY);
 		CefString(&settings.framework_dir_path) = CEF_LIBRARY;
 #endif
 #endif
@@ -304,8 +312,10 @@ static void BrowserInit(void)
 			obs_leave_graphics();
 		}
 #endif
-
+    blog(LOG_INFO, "BrowserInit, new BrowserApp with tex_sharing_avail = %d", tex_sharing_avail);
 	app = new BrowserApp(tex_sharing_avail);
+    blog(LOG_INFO, "BrowserInit, after new BrowserApp with tex_sharing_avail = %d", tex_sharing_avail);
+
 	CefExecuteProcess(args, app, nullptr);
 #ifdef _WIN32
 	/* Massive (but amazing) hack to prevent chromium from modifying our
@@ -369,6 +379,7 @@ extern "C" EXPORT void obs_browser_initialize(void)
 	if (!os_atomic_set_bool(&manager_initialized, true)) {
 		blog(LOG_INFO, "Initialize obs_browser");
 #ifdef USE_UI_LOOP
+        blog(LOG_INFO, "Using UI LOOP");
 		BrowserInit();
 #else
 		manager_thread = thread(BrowserManagerThread);
@@ -648,7 +659,7 @@ bool obs_module_load(void)
 #if defined(__APPLE__) && CHROME_VERSION_BUILD < 4183
 	// Make sure CEF malloc hijacking happens early in the process
 	if(isHighThanBigSur())
-		obs_browser_initialize();
+        obs_browser_initialize();
 #endif
 
 	return true;
