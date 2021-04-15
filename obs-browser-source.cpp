@@ -98,58 +98,28 @@ BrowserSource::~BrowserSource()
 void BrowserSource::ExecuteOnBrowser(BrowserFunc func, bool async)
 {
 	if (!async) {
-#ifdef USE_UI_LOOP
-#ifdef WIN32
-		if (QThread::currentThread() == qApp->thread()) {
-#elif __APPLE__
-		if (isMainThread()) {
-#endif
-			if (!!cefBrowser)
-				func(cefBrowser);
-			return;
-		}
-#endif
 		os_event_t *finishedEvent;
 		os_event_init(&finishedEvent, OS_EVENT_TYPE_AUTO);
-#ifdef WIN32
 		bool success = QueueCEFTask([&]() {
-#elif defined(USE_UI_LOOP) && defined(__APPLE__)
-		ExecuteTask([&]() {
-#endif
 			if (!!cefBrowser)
 				func(cefBrowser);
 			os_event_signal(finishedEvent);
 		});
-#ifdef WIN32
 		if (success) {
-#endif
 			os_event_wait(finishedEvent);
-#ifdef WIN32
 		}
-#endif
 		os_event_destroy(finishedEvent);
 	} else {
 		CefRefPtr<CefBrowser> browser = cefBrowser;
 		if (!!browser) {
-#if defined(USE_UI_LOOP) && defined(WIN32)
-			QueueBrowserTask(cefBrowser, func);
-#elif defined(USE_UI_LOOP) && defined(__APPLE__)
-			QueueBrowserTask(cefBrowser, func);
-#else
 			QueueCEFTask([=]() { func(browser); });
-#endif
 		}
 	}
 }
 
 bool BrowserSource::CreateBrowser()
 {
-#ifdef WIN32
 	return QueueCEFTask([this]() {
-#endif
-#if defined(USE_UI_LOOP) && defined(__APPLE__)
-	ExecuteTask([this]() {
-#endif
 #if EXPERIMENTAL_SHARED_TEXTURE_SUPPORT_ENABLED
 		if (hwaccel) {
 			obs_enter_graphics();
@@ -213,9 +183,6 @@ bool BrowserSource::CreateBrowser()
 
 		SendBrowserVisibility(cefBrowser, is_showing);
 	});
-#if defined(USE_UI_LOOP) && defined(__APPLE__)
-	return true;
-#endif
 }
 
 void BrowserSource::DestroyBrowser(bool async)
@@ -245,11 +212,7 @@ void BrowserSource::DestroyBrowser(bool async)
 
 void BrowserSource::ClearAudioStreams()
 {
-#ifdef WIN32
 	QueueCEFTask([this]() {
-#elif defined(USE_UI_LOOP) && defined(__APPLE__)
-	ExecuteTask([this]() {
-#endif
 		audio_streams.clear();
 		std::lock_guard<std::mutex> lock(audio_sources_mutex);
 		audio_sources.clear();
@@ -550,6 +513,7 @@ void BrowserSource::Tick()
 	if (!fps_custom)
 		reset_frame = true;
 #endif
+	QueueCEFTask([]() { CefDoMessageLoopWork(); });
 }
 
 extern void ProcessCef();
@@ -570,10 +534,6 @@ void BrowserSource::Render()
 
 #if EXPERIMENTAL_SHARED_TEXTURE_SUPPORT_ENABLED
 	SignalBeginFrame();
-#elif defined(USE_UI_LOOP) && defined(WIN32)
-	ProcessCef();
-#elif defined(USE_UI_LOOP) && defined(__APPLE__)
-	Process();
 #endif
 }
 

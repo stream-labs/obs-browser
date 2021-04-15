@@ -16,7 +16,7 @@ if(NOT CEF_FOUND)
 endif()
 
 option(EXPERIMENTAL_SHARED_TEXTURE_SUPPORT "Enable shared texture support for the browser plugin (Win32)" ON)
-option(BROWSER_PANEL_SUPPORT "Enables Qt web browser panel support" ON)
+option(BROWSER_PANEL_SUPPORT_ENABLED "Enables Qt web browser panel support" OFF)
 option(BROWSER_FRONTEND_API_SUPPORT "Enables integration with obs-frontend-api library" ON)
 
 if (EXPERIMENTAL_SHARED_TEXTURE_SUPPORT)
