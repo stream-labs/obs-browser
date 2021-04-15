@@ -479,9 +479,11 @@ bool BrowserClient::OnConsoleMessage(CefRefPtr<CefBrowser>,
 				     const CefString &message,
 				     const CefString &source, int line)
 {
+#ifndef _DEBUG
 #if CHROME_VERSION_BUILD >= 3282
 	if (level < LOGSEVERITY_ERROR)
 		return false;
+#endif
 #endif
 
 	blog(LOG_INFO, "obs-browser: %s (source: %s:%d)",

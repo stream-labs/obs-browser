@@ -69,10 +69,11 @@ bool hwaccel = false;
 
 /* ========================================================================= */
 
-#if defined(USE_UI_LOOP) && defined (WIN32)
+#if defined(USE_UI_LOOP) && defined(WIN32)
 extern MessageObject messageObject;
 #endif
 
+std::function<bool(std::function<void()>)> cef_queue_task_callback = nullptr;
 
 class BrowserTask : public CefTask {
 public:
@@ -102,8 +103,16 @@ public:
 
 bool QueueCEFTask(std::function<void()> task)
 {
+	if (cef_queue_task_callback) {
+		return cef_queue_task_callback(task);
+	}
+#if defined(USE_UI_LOOP) && defined(__APPLE__)
+	ExecuteTask(task);
+	return true;
+#else
 	return CefPostTask(TID_UI,
 			   CefRefPtr<BrowserTask>(new BrowserTask(task)));
+#endif
 }
 
 /* ========================================================================= */
@@ -235,14 +244,19 @@ static void BrowserInit(void)
 		path += ".exe";
 		CefMainArgs args;
 #else
-		/* On non-windows platforms, ie macOS, we'll want to pass thru flags to
-		* CEF */
-		struct obs_cmdline_args cmdline_args = obs_get_cmdline_args();
-		CefMainArgs args(cmdline_args.argc, cmdline_args.argv);
+        /* On non-windows platforms, ie macOS, we'll want to pass thru flags to
+        * CEF */
+	struct obs_cmdline_args cmdline_args = obs_get_cmdline_args();
+	CefMainArgs args(cmdline_args.argc, cmdline_args.argv);
 #endif
 
 		CefSettings settings;
-		settings.log_severity = LOGSEVERITY_DISABLE;
+#ifdef _DEBUG
+		settings.log_severity = LOGSEVERITY_VERBOSE;
+		CefString(&settings.log_file) = "cef.log";
+#else
+	settings.log_severity = LOGSEVERITY_DISABLE;
+#endif
 		settings.windowless_rendering_enabled = true;
 		settings.no_sandbox = true;
 
@@ -255,11 +269,22 @@ static void BrowserInit(void)
 #ifdef BROWSER_DEPLOY
 		std::string binPath = getExecutablePath();
 		binPath = binPath.substr(0, binPath.find_last_of('/'));
-		binPath += "/Frameworks/Chromium\ Embedded\ Framework.framework";
+		binPath +=
+			"/Frameworks/Chromium\ Embedded\ Framework.framework";
 		CefString(&settings.framework_dir_path) = binPath;
 #else
 		CefString(&settings.framework_dir_path) = CEF_LIBRARY;
 #endif
+#endif
+
+#ifdef __linux__
+		// Override locale path from OBS binary path to plugin binary path
+		string locales =
+			obs_get_module_binary_path(obs_current_module());
+		locales = locales.substr(0, locales.find_last_of('/') + 1);
+		locales += "locales";
+		BPtr<char> abs_locales = os_get_abs_path_ptr(locales.c_str());
+		CefString(&settings.locales_dir_path) = abs_locales;
 #endif
 
 		std::string obs_locale = obs_get_locale();
@@ -280,12 +305,13 @@ static void BrowserInit(void)
 				* it's a different path */
 				conf_path[strlen(conf_path.Get()) - 1] = '\0';
 
-				BPtr<char> conf_path_abs = os_get_abs_path_ptr(conf_path);
+				BPtr<char> conf_path_abs =
+					os_get_abs_path_ptr(conf_path);
 				CefString(&settings.cache_path) = conf_path_abs;
 			} else {
-				blog(LOG_WARNING, "obs-browser: Could not create cache directory");
+				blog(LOG_WARNING,
+				     "obs-browser: Could not create cache directory");
 			}
-
 
 		} else {
 			blog(LOG_INFO, "obs-browser: empty config path");
@@ -300,30 +326,41 @@ static void BrowserInit(void)
 #if EXPERIMENTAL_SHARED_TEXTURE_SUPPORT_ENABLED
 		if (hwaccel) {
 			obs_enter_graphics();
-			hwaccel = tex_sharing_avail = gs_shared_texture_available();
+			hwaccel = tex_sharing_avail =
+				gs_shared_texture_available();
 			obs_leave_graphics();
 		}
 #endif
 
-	app = new BrowserApp(tex_sharing_avail);
-	CefExecuteProcess(args, app, nullptr);
+		app = new BrowserApp(tex_sharing_avail);
+		int code = CefExecuteProcess(args, app, nullptr);
+		if (code >= 0) {
+			blog(LOG_ERROR, "failed to run CefExecuteProcess");
+		}
 #ifdef _WIN32
-	/* Massive (but amazing) hack to prevent chromium from modifying our
-	 * process tokens and permissions, which caused us problems with winrt,
-	 * used with window capture.  Note, the structure internally is just
-	 * two pointers normally.  If it causes problems with future versions
-	 * we'll just switch back to the static library but I doubt we'll need
-	 * to. */
-	uintptr_t zeroed_memory_lol[32] = {};
-	CefInitialize(args, settings, app, zeroed_memory_lol);
+		/* Massive (but amazing) hack to prevent chromium from modifying our
+                * process tokens and permissions, which caused us problems with winrt,
+                * used with window capture.  Note, the structure internally is just
+                * two pointers normally.  If it causes problems with future versions
+                * we'll just switch back to the static library but I doubt we'll need
+                * to. */
+		uintptr_t zeroed_memory_lol[32] = {};
+		bool result =
+			CefInitialize(args, settings, app, zeroed_memory_lol);
+		if (!result) {
+			blog(LOG_ERROR, "failed to run CefInitialize");
+		}
 #else
-	CefInitialize(args, settings, app, nullptr);
+	bool result = CefInitialize(args, settings, app, nullptr);
+	if (!result) {
+		blog(LOG_ERROR, "failed to run CefInitialize");
+	}
 #endif
 #if !ENABLE_LOCAL_FILE_URL_SCHEME
 		/* Register http://absolute/ scheme handler for older
 		* CEF builds which do not support file:// URLs */
-		CefRegisterSchemeHandlerFactory("http", "absolute",
-						new BrowserSchemeHandlerFactory());
+		CefRegisterSchemeHandlerFactory(
+			"http", "absolute", new BrowserSchemeHandlerFactory());
 #endif
 		os_event_signal(cef_started_event);
 #if defined(__APPLE__) && defined(USE_UI_LOOP)
@@ -331,13 +368,11 @@ static void BrowserInit(void)
 #endif
 }
 
-
 #if defined(USE_UI_LOOP) && defined(WIN32)
 extern MessageObject messageObject;
 #elif defined(USE_UI_LOOP) && defined(__APPLE)
-extern BrowserCppInt* message;
+extern BrowserCppInt *message;
 #endif
-
 
 static void BrowserShutdown(void)
 {
@@ -395,7 +430,8 @@ void RegisterBrowserSource()
 	info.create = [](obs_data_t *settings, obs_source_t *source) -> void * {
 		obs_browser_initialize();
 		obs_source_set_audio_mixers(source, 0xFF);
-		obs_source_set_monitoring_type(source, OBS_MONITORING_TYPE_MONITOR_ONLY);
+		obs_source_set_monitoring_type(
+			source, OBS_MONITORING_TYPE_MONITOR_ONLY);
 		return new BrowserSource(settings, source);
 	};
 	info.destroy = [](void *data) {
@@ -635,19 +671,25 @@ bool obs_module_load(void)
 	obs_frontend_add_event_callback(handle_obs_frontend_event, nullptr);
 #endif
 
-
-#if EXPERIMENTAL_SHARED_TEXTURE_SUPPORT_ENABLED
 	obs_data_t *private_data = obs_get_private_data();
+#if EXPERIMENTAL_SHARED_TEXTURE_SUPPORT_ENABLED
 	hwaccel = obs_data_get_bool(private_data, "BrowserHWAccel");
 	if (hwaccel) {
 		check_hwaccel_support();
 	}
-	obs_data_release(private_data);
 #endif
+	auto callback =
+		reinterpret_cast<std::function<bool(std::function<void()>)> *>(
+			obs_data_get_int(private_data,
+					 "cef_queue_task_callback"));
+	if (callback) {
+		cef_queue_task_callback = *callback;
+	}
+	obs_data_release(private_data);
 
 #if defined(__APPLE__) && CHROME_VERSION_BUILD < 4183
 	// Make sure CEF malloc hijacking happens early in the process
-	if(isHighThanBigSur())
+	if (isHighThanBigSur())
 		obs_browser_initialize();
 #endif
 
