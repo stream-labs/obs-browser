@@ -19,6 +19,7 @@
 #include "browser-app.hpp"
 #include "browser-version.h"
 #include <json11/json11.hpp>
+#include <iostream>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -65,12 +66,17 @@ void BrowserApp::OnRegisterCustomSchemes(CefRawPtr<CefSchemeRegistrar> registrar
 void BrowserApp::OnBeforeChildProcessLaunch(
 	CefRefPtr<CefCommandLine> command_line)
 {
+    std::cout << "BrowserApp::OnBeforeChildProcessLaunch -> " << this << std::endl;
 #ifdef _WIN32
 	std::string pid = std::to_string(GetCurrentProcessId());
 	command_line->AppendSwitchWithValue("parent_pid", pid);
 #else
-	(void)command_line;
+	//(void)command_line;
 #endif
+    if (this->use_media_flag) {
+        command_line->AppendSwitch("enable-media-stream");
+        std::cout << "BrowserApp::OnBeforeChildProcessLaunch ENABLED media stream " << std::endl;
+    }
 }
 
 void BrowserApp::OnBeforeCommandLineProcessing(

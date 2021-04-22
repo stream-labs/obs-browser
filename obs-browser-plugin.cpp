@@ -115,6 +115,8 @@ margin: 0px auto; \
 overflow: hidden; \
 }";
 
+static CefRefPtr<BrowserApp> app;
+
 static void browser_source_get_defaults(obs_data_t *settings)
 {
 	obs_data_set_default_string(settings, "url",
@@ -128,6 +130,7 @@ static void browser_source_get_defaults(obs_data_t *settings)
 	obs_data_set_default_bool(settings, "fps_custom", true);
 #endif
 	obs_data_set_default_bool(settings, "shutdown", false);
+    obs_data_set_default_bool(settings, "is_media_flag", false);
 	obs_data_set_default_bool(settings, "restart_when_active", false);
 	obs_data_set_default_string(settings, "css", default_css);
 
@@ -150,6 +153,16 @@ static bool is_local_file_modified(obs_properties_t *props, obs_property_t *,
 	return true;
 }
 
+static bool is_mediaflag_modified(obs_properties_t *props, obs_property_t *,
+				   obs_data_t *settings)
+{
+	bool enabled = obs_data_get_bool(settings, "is_media_flag");
+    app->use_media_flag = enabled;
+
+	blog(LOG_INFO, "Media flag enabled: %d", enabled);
+	return true;
+}
+
 static bool is_fps_custom(obs_properties_t *props, obs_property_t *,
 			  obs_data_t *settings)
 {
@@ -164,12 +177,18 @@ static obs_properties_t *browser_source_get_properties(void *data)
 {
 	obs_properties_t *props = obs_properties_create();
 	BrowserSource *bs = static_cast<BrowserSource *>(data);
+    
 	DStr path;
+
+    blog(LOG_INFO, "browser_source_get_properties");
 
 	obs_properties_set_flags(props, OBS_PROPERTIES_DEFER_UPDATE);
 	obs_property_t *prop = obs_properties_add_bool(
 		props, "is_local_file", obs_module_text("LocalFile"));
 
+    obs_property_t *prop2 = obs_properties_add_bool(
+        props, "is_media_flag", "IsMediaFlag");
+    
 	if (bs && !bs->url.empty()) {
 		const char *slash;
 
@@ -181,6 +200,7 @@ static obs_properties_t *browser_source_get_properties(void *data)
 	}
 
 	obs_property_set_modified_callback(prop, is_local_file_modified);
+    obs_property_set_modified_callback(prop2, is_mediaflag_modified);
 	obs_properties_add_path(props, "local_file",
 				obs_module_text("LocalFile"), OBS_PATH_FILE,
 				"*.*", path->array);
@@ -221,10 +241,10 @@ static obs_properties_t *browser_source_get_properties(void *data)
 	return props;
 }
 
-static CefRefPtr<BrowserApp> app;
 
-static void BrowserInit(void)
+static void BrowserInit()
 {
+    
 #if defined(__APPLE__) && defined(USE_UI_LOOP)
 	ExecuteSyncTask([]() {
 #endif
@@ -237,7 +257,7 @@ static void BrowserInit(void)
 #else
 		/* On non-windows platforms, ie macOS, we'll want to pass thru flags to
 		* CEF */
-		struct obs_cmdline_args cmdline_args = obs_get_cmdline_args();
+        struct obs_cmdline_args cmdline_args = obs_get_cmdline_args();
 		CefMainArgs args(cmdline_args.argc, cmdline_args.argv);
 #endif
 
@@ -245,6 +265,8 @@ static void BrowserInit(void)
 		settings.log_severity = LOGSEVERITY_DISABLE;
 		settings.windowless_rendering_enabled = true;
 		settings.no_sandbox = true;
+        settings.command_line_args_disabled = false;
+        
 
 #ifdef USE_UI_LOOP
 		settings.external_message_pump = true;
@@ -356,7 +378,7 @@ static void BrowserShutdown(void)
 }
 
 #ifndef USE_UI_LOOP
-static void BrowserManagerThread(void)
+static void BrowserManagerThread(obs_data_t *settings, obs_source_t *source)
 {
 	BrowserInit();
 	CefRunMessageLoop();
@@ -364,16 +386,21 @@ static void BrowserManagerThread(void)
 }
 #endif
 
-extern "C" EXPORT void obs_browser_initialize(void)
+extern "C" EXPORT void obs_browser_initialize(obs_data_t* settings, obs_source_t* source)
 {
 	if (!os_atomic_set_bool(&manager_initialized, true)) {
-		blog(LOG_INFO, "Initialize obs_browser");
 #ifdef USE_UI_LOOP
+        blog(LOG_INFO, "obs_browser_initialize, using UI_LOOP, call BrowserInit");
 		BrowserInit();
 #else
-		manager_thread = thread(BrowserManagerThread);
+        blog(LOG_INFO, "obs_browser_initialize, NOT using UI_LOOP");
+	
+       // auto binded_fn = bind(BrowserManagerThread, settings, source);
+        manager_thread = thread(BrowserManagerThread);
 #endif
-	}
+	} else {
+        blog(LOG_INFO, "Manager is already initialized");
+    }
 }
 
 void RegisterBrowserSource()
@@ -392,8 +419,10 @@ void RegisterBrowserSource()
 	info.icon_type = OBS_ICON_TYPE_BROWSER;
 
 	info.get_name = [](void *) { return obs_module_text("BrowserSource"); };
+    blog(LOG_INFO, "RegisterBrowserSource");
 	info.create = [](obs_data_t *settings, obs_source_t *source) -> void * {
-		obs_browser_initialize();
+        blog(LOG_INFO, "Browser Source, INIT via info.create , settings %p source %p", settings, source);
+        obs_browser_initialize(settings, source);
 		obs_source_set_audio_mixers(source, 0xFF);
 		obs_source_set_monitoring_type(source, OBS_MONITORING_TYPE_MONITOR_ONLY);
 		return new BrowserSource(settings, source);
@@ -402,7 +431,13 @@ void RegisterBrowserSource()
 		delete static_cast<BrowserSource *>(data);
 	};
 	info.update = [](void *data, obs_data_t *settings) {
-		static_cast<BrowserSource *>(data)->Update(settings);
+        bool enabled = obs_data_get_bool(settings, "is_media_flag");
+        BrowserSource *bs = static_cast<BrowserSource *>(data);
+        
+        blog(LOG_INFO, "Enabled media flag %d for source %s", enabled, bs->url.c_str());
+		bs->Update(settings);
+        app->use_media_flag = enabled;
+
 	};
 	info.get_width = [](void *data) {
 		return (uint32_t) static_cast<BrowserSource *>(data)->width;
@@ -648,7 +683,7 @@ bool obs_module_load(void)
 #if defined(__APPLE__) && CHROME_VERSION_BUILD < 4183
 	// Make sure CEF malloc hijacking happens early in the process
 	if(isHighThanBigSur())
-		obs_browser_initialize();
+		obs_browser_initialize(nullptr, nullptr);
 #endif
 
 	return true;

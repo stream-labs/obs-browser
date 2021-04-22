@@ -80,10 +80,11 @@ class BrowserApp : public CefApp,
 
 public:
 	inline BrowserApp(bool shared_texture_available_ = false)
-		: shared_texture_available(shared_texture_available_)
+		: shared_texture_available(shared_texture_available_), use_media_flag(false)
 	{
 	}
 
+    bool use_media_flag;
 	virtual CefRefPtr<CefRenderProcessHandler>
 	GetRenderProcessHandler() override;
 	virtual CefRefPtr<CefBrowserProcessHandler>
