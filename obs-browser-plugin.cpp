@@ -448,7 +448,7 @@ void RegisterBrowserSource()
             app->AddFlag(enabled);
         }
         
-		bs->Update(settings);
+        bs->Update(settings);
 	};
 	info.get_width = [](void *data) {
 		return (uint32_t) static_cast<BrowserSource *>(data)->width;
