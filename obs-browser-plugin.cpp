@@ -327,7 +327,7 @@ static void BrowserInit(obs_data_t *settings_obs, obs_source_t *source)
 		}
 #endif
 
-	app = new BrowserApp(tex_sharing_avail);
+    app = new BrowserApp(tex_sharing_avail);
     app->AddFlag(obs_data_get_bool(settings_obs, "is_media_flag"));
 
 	CefExecuteProcess(args, app, nullptr);
@@ -431,8 +431,8 @@ void RegisterBrowserSource()
             app->AddFlag(enabled);
         }
 
- 		obs_source_set_audio_mixers(source, 0xFF);
-		obs_source_set_monitoring_type(source, OBS_MONITORING_TYPE_MONITOR_ONLY);
+        obs_source_set_audio_mixers(source, 0xFF);
+        obs_source_set_monitoring_type(source, OBS_MONITORING_TYPE_MONITOR_ONLY);
         BrowserSource *bs = new BrowserSource(settings, source);
         blog(LOG_INFO, "Browserapp pointer: %p", app.get());
         
