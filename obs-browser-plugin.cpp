@@ -445,7 +445,7 @@ void RegisterBrowserSource()
         BrowserSource *bs = static_cast<BrowserSource *>(data);
         if (app) {
             bool enabled = obs_data_get_bool(settings, "is_media_flag");
-            app->AddFlag(enabled);
+            app->media_flag = enabled ? 1 : 0;
         }
         
         bs->Update(settings);

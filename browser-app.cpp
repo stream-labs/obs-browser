@@ -82,7 +82,13 @@ void BrowserApp::OnBeforeChildProcessLaunch(
 #endif
 
     std::lock_guard<std::mutex> guard(flag_mutex);
-    if (this->media_flags.size()) {
+    if (this->media_flag != -1) {
+        if (this->media_flag) {
+            command_line->AppendSwitch("enable-media-stream");
+        }
+        this->media_flag = -1;
+    }
+    else if (this->media_flags.size()) {
         bool flag = media_flags.front();
         media_flags.pop();
         if (flag) {
