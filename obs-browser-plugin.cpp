@@ -242,11 +242,11 @@ static obs_properties_t *browser_source_get_properties(void *data)
 }
 
 
-static void BrowserInit()
+static void BrowserInit(obs_data_t *settings_obs, obs_source_t *source)
 {
     
 #if defined(__APPLE__) && defined(USE_UI_LOOP)
-	ExecuteSyncTask([]() {
+	ExecuteSyncTask([settings_obs]() {
 #endif
 		string path = obs_get_module_binary_path(obs_current_module());
 		path = path.substr(0, path.find_last_of('/') + 1);
@@ -328,6 +328,8 @@ static void BrowserInit()
 #endif
 
 	app = new BrowserApp(tex_sharing_avail);
+    app->AddFlag(obs_data_get_bool(settings_obs, "is_media_flag"));
+
 	CefExecuteProcess(args, app, nullptr);
 #ifdef _WIN32
 	/* Massive (but amazing) hack to prevent chromium from modifying our
@@ -380,7 +382,7 @@ static void BrowserShutdown(void)
 #ifndef USE_UI_LOOP
 static void BrowserManagerThread(obs_data_t *settings, obs_source_t *source)
 {
-	BrowserInit();
+	BrowserInit(settings, source);
 	CefRunMessageLoop();
 	BrowserShutdown();
 }
@@ -391,12 +393,12 @@ extern "C" EXPORT void obs_browser_initialize(obs_data_t* settings, obs_source_t
 	if (!os_atomic_set_bool(&manager_initialized, true)) {
 #ifdef USE_UI_LOOP
         blog(LOG_INFO, "obs_browser_initialize, using UI_LOOP, call BrowserInit");
-		BrowserInit();
+		BrowserInit(settings, source);
 #else
         blog(LOG_INFO, "obs_browser_initialize, NOT using UI_LOOP");
 	
-       // auto binded_fn = bind(BrowserManagerThread, settings, source);
-        manager_thread = thread(BrowserManagerThread);
+        auto binded_fn = bind(BrowserManagerThread, settings, source);
+        manager_thread = thread(binded_fn);
 #endif
 	} else {
         blog(LOG_INFO, "Manager is already initialized");
@@ -421,13 +423,18 @@ void RegisterBrowserSource()
 	info.get_name = [](void *) { return obs_module_text("BrowserSource"); };
     blog(LOG_INFO, "RegisterBrowserSource");
 	info.create = [](obs_data_t *settings, obs_source_t *source) -> void * {
-        bool enabled = obs_data_get_bool(settings, "is_media_flag");
-        blog(LOG_INFO, "Browser Source, INIT via info.create , settings %p source %p, media flag: %d", settings, source, enabled);
+        blog(LOG_INFO, "Browser Source, INIT via info.create , settings %p source %p", settings, source);
 
         obs_browser_initialize(settings, source);
-		obs_source_set_audio_mixers(source, 0xFF);
+        if (manager_initialized && app) {
+            bool enabled = obs_data_get_bool(settings, "is_media_flag");
+            app->AddFlag(enabled);
+        }
+
+ 		obs_source_set_audio_mixers(source, 0xFF);
 		obs_source_set_monitoring_type(source, OBS_MONITORING_TYPE_MONITOR_ONLY);
         BrowserSource *bs = new BrowserSource(settings, source);
+        blog(LOG_INFO, "Browserapp pointer: %p", app.get());
         
         return bs;
 	};
@@ -435,11 +442,12 @@ void RegisterBrowserSource()
 		delete static_cast<BrowserSource *>(data);
 	};
 	info.update = [](void *data, obs_data_t *settings) {
-        bool enabled = obs_data_get_bool(settings, "is_media_flag");
         BrowserSource *bs = static_cast<BrowserSource *>(data);
-        blog(LOG_INFO, "Enabled media flag %d for source %s", enabled, bs->url.c_str());
+        if (app) {
+            bool enabled = obs_data_get_bool(settings, "is_media_flag");
+            app->AddFlag(enabled);
+        }
         
-        app->media_flag = enabled;
 		bs->Update(settings);
 	};
 	info.get_width = [](void *data) {

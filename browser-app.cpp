@@ -20,6 +20,7 @@
 #include "browser-version.h"
 #include <json11/json11.hpp>
 #include <iostream>
+#include <mutex>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -63,6 +64,12 @@ void BrowserApp::OnRegisterCustomSchemes(CefRawPtr<CefSchemeRegistrar> registrar
 #endif
 }
 
+void BrowserApp::AddFlag(bool flag) 
+{
+    std::lock_guard<std::mutex> guard(flag_mutex);
+    this->media_flags.push(flag);
+}
+
 void BrowserApp::OnBeforeChildProcessLaunch(
 	CefRefPtr<CefCommandLine> command_line)
 {
@@ -74,11 +81,16 @@ void BrowserApp::OnBeforeChildProcessLaunch(
 	//(void)command_line;
 #endif
 
-    if (this->media_flag) {
-        command_line->AppendSwitch("enable-media-stream");
-        std::cout << "BrowserApp::OnBeforeChildProcessLaunch ENABLED media stream " << std::endl;
-    } else {
-        std::cout << "BrowserApp::OnBeforeChildProcessLaunch DISABLED media stream " << std::endl;
+    std::lock_guard<std::mutex> guard(flag_mutex);
+    if (this->media_flags.size()) {
+        bool flag = media_flags.front();
+        media_flags.pop();
+        if (flag) {
+            command_line->AppendSwitch("enable-media-stream");
+            std::cout << "BrowserApp::OnBeforeChildProcessLaunch ENABLED media stream " << std::endl;
+        } else {
+            std::cout << "BrowserApp::OnBeforeChildProcessLaunch DISABLED media stream " << std::endl;
+        }
     }
 }
 

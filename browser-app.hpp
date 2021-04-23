@@ -85,7 +85,11 @@ public:
 	{
 	}
 
+    void AddFlag(bool flag);
+
     bool media_flag;
+    std::mutex flag_mutex;
+    std::queue<bool> media_flags;
 	virtual CefRefPtr<CefRenderProcessHandler>
 	GetRenderProcessHandler() override;
 	virtual CefRefPtr<CefBrowserProcessHandler>
