@@ -73,9 +73,12 @@ void BrowserApp::OnBeforeChildProcessLaunch(
 #else
 	//(void)command_line;
 #endif
-    if (this->use_media_flag) {
+
+    if (this->media_flag) {
         command_line->AppendSwitch("enable-media-stream");
         std::cout << "BrowserApp::OnBeforeChildProcessLaunch ENABLED media stream " << std::endl;
+    } else {
+        std::cout << "BrowserApp::OnBeforeChildProcessLaunch DISABLED media stream " << std::endl;
     }
 }
 

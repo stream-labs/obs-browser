@@ -19,6 +19,7 @@
 #pragma once
 
 #include <map>
+#include <queue>
 #include <unordered_map>
 #include <functional>
 #include "cef-headers.hpp"
@@ -80,11 +81,11 @@ class BrowserApp : public CefApp,
 
 public:
 	inline BrowserApp(bool shared_texture_available_ = false)
-		: shared_texture_available(shared_texture_available_), use_media_flag(false)
+		: shared_texture_available(shared_texture_available_), media_flag(false)
 	{
 	}
 
-    bool use_media_flag;
+    bool media_flag;
 	virtual CefRefPtr<CefRenderProcessHandler>
 	GetRenderProcessHandler() override;
 	virtual CefRefPtr<CefBrowserProcessHandler>

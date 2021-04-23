@@ -197,13 +197,13 @@ bool BrowserSource::CreateBrowser()
 			cefBrowserSettings.web_security = STATE_DISABLED;
 		}
 #endif
-
 		cefBrowser = CefBrowserHost::CreateBrowserSync(
 			windowInfo, browserClient, url, cefBrowserSettings,
 #if CHROME_VERSION_BUILD >= 3770
 			CefRefPtr<CefDictionaryValue>(),
 #endif
-			nullptr);
+            nullptr);
+    
 		if (cefBrowser) {
 			blog(LOG_INFO, "CreateBrowserSync - success");
 		} else {

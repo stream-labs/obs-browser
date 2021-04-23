@@ -157,7 +157,7 @@ static bool is_mediaflag_modified(obs_properties_t *props, obs_property_t *,
 				   obs_data_t *settings)
 {
 	bool enabled = obs_data_get_bool(settings, "is_media_flag");
-    app->use_media_flag = enabled;
+   // app->use_media_flag = enabled;
 
 	blog(LOG_INFO, "Media flag enabled: %d", enabled);
 	return true;
@@ -421,11 +421,15 @@ void RegisterBrowserSource()
 	info.get_name = [](void *) { return obs_module_text("BrowserSource"); };
     blog(LOG_INFO, "RegisterBrowserSource");
 	info.create = [](obs_data_t *settings, obs_source_t *source) -> void * {
-        blog(LOG_INFO, "Browser Source, INIT via info.create , settings %p source %p", settings, source);
+        bool enabled = obs_data_get_bool(settings, "is_media_flag");
+        blog(LOG_INFO, "Browser Source, INIT via info.create , settings %p source %p, media flag: %d", settings, source, enabled);
+
         obs_browser_initialize(settings, source);
 		obs_source_set_audio_mixers(source, 0xFF);
 		obs_source_set_monitoring_type(source, OBS_MONITORING_TYPE_MONITOR_ONLY);
-		return new BrowserSource(settings, source);
+        BrowserSource *bs = new BrowserSource(settings, source);
+        
+        return bs;
 	};
 	info.destroy = [](void *data) {
 		delete static_cast<BrowserSource *>(data);
@@ -433,11 +437,10 @@ void RegisterBrowserSource()
 	info.update = [](void *data, obs_data_t *settings) {
         bool enabled = obs_data_get_bool(settings, "is_media_flag");
         BrowserSource *bs = static_cast<BrowserSource *>(data);
-        
         blog(LOG_INFO, "Enabled media flag %d for source %s", enabled, bs->url.c_str());
+        
+        app->media_flag = enabled;
 		bs->Update(settings);
-        app->use_media_flag = enabled;
-
 	};
 	info.get_width = [](void *data) {
 		return (uint32_t) static_cast<BrowserSource *>(data)->width;
