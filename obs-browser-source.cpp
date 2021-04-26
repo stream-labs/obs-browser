@@ -160,12 +160,9 @@ bool BrowserSource::CreateBrowser()
 		bool hwaccel = false;
 #endif
 
-        blog(LOG_INFO, "BrowserSource::CreateBrowser(), creating new browser client");
-		CefRefPtr<BrowserClient> browserClient = new BrowserClient(
-			this, hwaccel && tex_sharing_avail, reroute_audio);
-        
-
-		CefWindowInfo windowInfo;
+	blog(LOG_INFO, "BrowserSource::CreateBrowser(), creating new browser client");
+	CefRefPtr<BrowserClient> browserClient = new BrowserClient(this, hwaccel && tex_sharing_avail, reroute_audio);
+	CefWindowInfo windowInfo;
 #if CHROME_VERSION_BUILD < 3071
 		windowInfo.transparent_painting_enabled = true;
 #endif
@@ -451,7 +448,7 @@ void BrowserSource::Update(obs_data_t *settings)
 {
 	if (settings) {
 		bool n_is_local;
-        bool n_is_media_flag;
+		bool n_is_media_flag;
 		int n_width;
 		int n_height;
 		bool n_fps_custom;
@@ -523,11 +520,11 @@ void BrowserSource::Update(obs_data_t *settings)
 		    n_restart == restart && n_css == css && n_url == url &&
 		    n_reroute == reroute_audio && n_is_media_flag == is_media_flag) {
             
-            blog(LOG_INFO, "Browsersource::Update, same settings", n_is_media_flag, is_media_flag);
+			blog(LOG_INFO, "Browsersource::Update, same settings", n_is_media_flag, is_media_flag);
 			return;
 		}
 
-        is_media_flag = n_is_media_flag;
+		is_media_flag = n_is_media_flag;
 		is_local = n_is_local;
 		width = n_width;
 		height = n_height;

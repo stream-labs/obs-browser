@@ -130,7 +130,7 @@ static void browser_source_get_defaults(obs_data_t *settings)
 	obs_data_set_default_bool(settings, "fps_custom", true);
 #endif
 	obs_data_set_default_bool(settings, "shutdown", false);
-    obs_data_set_default_bool(settings, "is_media_flag", false);
+	obs_data_set_default_bool(settings, "is_media_flag", false);
 	obs_data_set_default_bool(settings, "restart_when_active", false);
 	obs_data_set_default_string(settings, "css", default_css);
 
@@ -157,8 +157,6 @@ static bool is_mediaflag_modified(obs_properties_t *props, obs_property_t *,
 				   obs_data_t *settings)
 {
 	bool enabled = obs_data_get_bool(settings, "is_media_flag");
-   // app->use_media_flag = enabled;
-
 	blog(LOG_INFO, "Media flag enabled: %d", enabled);
 	return true;
 }
@@ -180,14 +178,12 @@ static obs_properties_t *browser_source_get_properties(void *data)
     
 	DStr path;
 
-    blog(LOG_INFO, "browser_source_get_properties");
+	blog(LOG_INFO, "browser_source_get_properties");
 
 	obs_properties_set_flags(props, OBS_PROPERTIES_DEFER_UPDATE);
 	obs_property_t *prop = obs_properties_add_bool(
 		props, "is_local_file", obs_module_text("LocalFile"));
-
-    obs_property_t *prop2 = obs_properties_add_bool(props, "is_media_flag", obs_module_text("IsMediaFlag"));
-    
+	obs_property_t *prop2 = obs_properties_add_bool(props, "is_media_flag", obs_module_text("IsMediaFlag"));
 	if (bs && !bs->url.empty()) {
 		const char *slash;
 
@@ -199,7 +195,7 @@ static obs_properties_t *browser_source_get_properties(void *data)
 	}
 
 	obs_property_set_modified_callback(prop, is_local_file_modified);
-    obs_property_set_modified_callback(prop2, is_mediaflag_modified);
+	obs_property_set_modified_callback(prop2, is_mediaflag_modified);
 	obs_properties_add_path(props, "local_file",
 				obs_module_text("LocalFile"), OBS_PATH_FILE,
 				"*.*", path->array);
@@ -264,7 +260,7 @@ static void BrowserInit(obs_data_t *settings_obs, obs_source_t *source)
 		settings.log_severity = LOGSEVERITY_DISABLE;
 		settings.windowless_rendering_enabled = true;
 		settings.no_sandbox = true;
-        settings.command_line_args_disabled = false;
+		settings.command_line_args_disabled = false;
         
 
 #ifdef USE_UI_LOOP
@@ -420,7 +416,7 @@ void RegisterBrowserSource()
 	info.icon_type = OBS_ICON_TYPE_BROWSER;
 
 	info.get_name = [](void *) { return obs_module_text("BrowserSource"); };
-    blog(LOG_INFO, "RegisterBrowserSource");
+	blog(LOG_INFO, "RegisterBrowserSource");
 	info.create = [](obs_data_t *settings, obs_source_t *source) -> void * {
         blog(LOG_INFO, "Browser Source, INIT via info.create , settings %p source %p", settings, source);
 

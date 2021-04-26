@@ -73,12 +73,10 @@ void BrowserApp::AddFlag(bool flag)
 void BrowserApp::OnBeforeChildProcessLaunch(
 	CefRefPtr<CefCommandLine> command_line)
 {
-    std::cout << "BrowserApp::OnBeforeChildProcessLaunch -> " << this << std::endl;
 #ifdef _WIN32
 	std::string pid = std::to_string(GetCurrentProcessId());
 	command_line->AppendSwitchWithValue("parent_pid", pid);
 #else
-	//(void)command_line;
 #endif
 
     std::lock_guard<std::mutex> guard(flag_mutex);
@@ -93,9 +91,6 @@ void BrowserApp::OnBeforeChildProcessLaunch(
         media_flags.pop();
         if (flag) {
             command_line->AppendSwitch("enable-media-stream");
-            std::cout << "BrowserApp::OnBeforeChildProcessLaunch ENABLED media stream " << std::endl;
-        } else {
-            std::cout << "BrowserApp::OnBeforeChildProcessLaunch DISABLED media stream " << std::endl;
         }
     }
 }
