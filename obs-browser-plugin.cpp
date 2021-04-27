@@ -181,11 +181,10 @@ static obs_properties_t *browser_source_get_properties(void *data)
 	blog(LOG_INFO, "browser_source_get_properties");
 
 	obs_properties_set_flags(props, OBS_PROPERTIES_DEFER_UPDATE);
-	obs_property_t *prop = obs_properties_add_bool(
-		props, "is_local_file", obs_module_text("LocalFile"));
-        
-    obs_property_t *prop2 = obs_properties_add_bool(props, "is_media_flag", "IsMediaFlag");
-    
+	obs_property_t *prop = obs_properties_add_bool(props, "is_local_file", obs_module_text("LocalFile"));
+    obs_property_t *is_media_flag_prop = obs_properties_add_bool(props, "is_media_flag", "IsMediaFlag");
+    obs_property_set_visible(is_media_flag_prop, false);
+
 	if (bs && !bs->url.empty()) {
 		const char *slash;
 
@@ -197,17 +196,15 @@ static obs_properties_t *browser_source_get_properties(void *data)
 	}
 
 	obs_property_set_modified_callback(prop, is_local_file_modified);
-	obs_property_set_modified_callback(prop2, is_mediaflag_modified);
+	obs_property_set_modified_callback(is_media_flag_prop, is_mediaflag_modified);
 	obs_properties_add_path(props, "local_file",
 				obs_module_text("LocalFile"), OBS_PATH_FILE,
 				"*.*", path->array);
 	obs_properties_add_text(props, "url", obs_module_text("URL"),
 				OBS_TEXT_DEFAULT);
 
-	obs_properties_add_int(props, "width", obs_module_text("Width"), 1,
-			       4096, 1);
-	obs_properties_add_int(props, "height", obs_module_text("Height"), 1,
-			       4096, 1);
+	obs_properties_add_int(props, "width", obs_module_text("Width"), 1, 4096, 1);
+	obs_properties_add_int(props, "height", obs_module_text("Height"), 1, 4096, 1);
 
 	obs_property_t *fps_set = obs_properties_add_bool(
 		props, "fps_custom", obs_module_text("CustomFrameRate"));
