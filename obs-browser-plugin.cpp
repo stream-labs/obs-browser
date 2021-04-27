@@ -182,8 +182,8 @@ static obs_properties_t *browser_source_get_properties(void *data)
 
 	obs_properties_set_flags(props, OBS_PROPERTIES_DEFER_UPDATE);
 	obs_property_t *prop = obs_properties_add_bool(props, "is_local_file", obs_module_text("LocalFile"));
-    obs_property_t *is_media_flag_prop = obs_properties_add_bool(props, "is_media_flag", "IsMediaFlag");
-    obs_property_set_visible(is_media_flag_prop, false);
+	obs_property_t *is_media_flag_prop = obs_properties_add_bool(props, "is_media_flag", "IsMediaFlag");
+	obs_property_set_visible(is_media_flag_prop, false);
 
 	if (bs && !bs->url.empty()) {
 		const char *slash;
@@ -251,7 +251,7 @@ static void BrowserInit(obs_data_t *settings_obs, obs_source_t *source)
 #else
 		/* On non-windows platforms, ie macOS, we'll want to pass thru flags to
 		* CEF */
-        struct obs_cmdline_args cmdline_args = obs_get_cmdline_args();
+		struct obs_cmdline_args cmdline_args = obs_get_cmdline_args();
 		CefMainArgs args(cmdline_args.argc, cmdline_args.argv);
 #endif
 
@@ -260,8 +260,6 @@ static void BrowserInit(obs_data_t *settings_obs, obs_source_t *source)
 		settings.windowless_rendering_enabled = true;
 		settings.no_sandbox = true;
 		settings.command_line_args_disabled = false;
-        
-
 #ifdef USE_UI_LOOP
 		settings.external_message_pump = true;
 		settings.multi_threaded_message_loop = false;
@@ -321,8 +319,8 @@ static void BrowserInit(obs_data_t *settings_obs, obs_source_t *source)
 		}
 #endif
 
-    app = new BrowserApp(tex_sharing_avail);
-    app->AddFlag(obs_data_get_bool(settings_obs, "is_media_flag"));
+		app = new BrowserApp(tex_sharing_avail);
+		app->AddFlag(obs_data_get_bool(settings_obs, "is_media_flag"));
 
 	CefExecuteProcess(args, app, nullptr);
 #ifdef _WIN32
@@ -386,17 +384,16 @@ extern "C" EXPORT void obs_browser_initialize(obs_data_t* settings, obs_source_t
 {
 	if (!os_atomic_set_bool(&manager_initialized, true)) {
 #ifdef USE_UI_LOOP
-        blog(LOG_INFO, "obs_browser_initialize, using UI_LOOP, call BrowserInit");
+		blog(LOG_INFO, "obs_browser_initialize, using UI_LOOP, call BrowserInit");
 		BrowserInit(settings, source);
 #else
-        blog(LOG_INFO, "obs_browser_initialize, NOT using UI_LOOP");
-	
-        auto binded_fn = bind(BrowserManagerThread, settings, source);
-        manager_thread = thread(binded_fn);
+		 blog(LOG_INFO, "obs_browser_initialize, NOT using UI_LOOP");
+		auto binded_fn = bind(BrowserManagerThread, settings, source);
+		manager_thread = thread(binded_fn);
 #endif
 	} else {
-        blog(LOG_INFO, "Manager is already initialized");
-    }
+		blog(LOG_INFO, "Manager is already initialized");
+	}
 }
 
 void RegisterBrowserSource()

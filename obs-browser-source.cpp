@@ -459,7 +459,7 @@ void BrowserSource::Update(obs_data_t *settings)
 		std::string n_url;
 		std::string n_css;
 
-        n_is_media_flag = obs_data_get_bool(settings, "is_media_flag");
+		n_is_media_flag = obs_data_get_bool(settings, "is_media_flag");
 		n_is_local = obs_data_get_bool(settings, "is_local_file");
 		n_width = (int)obs_data_get_int(settings, "width");
 		n_height = (int)obs_data_get_int(settings, "height");
