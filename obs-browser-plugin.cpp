@@ -183,7 +183,9 @@ static obs_properties_t *browser_source_get_properties(void *data)
 	obs_properties_set_flags(props, OBS_PROPERTIES_DEFER_UPDATE);
 	obs_property_t *prop = obs_properties_add_bool(
 		props, "is_local_file", obs_module_text("LocalFile"));
-	obs_property_t *prop2 = obs_properties_add_bool(props, "is_media_flag", obs_module_text("IsMediaFlag"));
+        
+    obs_property_t *prop2 = obs_properties_add_bool(props, "is_media_flag", "IsMediaFlag");
+    
 	if (bs && !bs->url.empty()) {
 		const char *slash;
 
