@@ -236,7 +236,7 @@ static obs_properties_t *browser_source_get_properties(void *data)
 }
 
 
-static void BrowserInit(obs_data_t *settings_obs, obs_source_t *source)
+static void BrowserInit(obs_data_t *settings_obs)
 {
     
 #if defined(__APPLE__) && defined(USE_UI_LOOP)
@@ -372,23 +372,23 @@ static void BrowserShutdown(void)
 }
 
 #ifndef USE_UI_LOOP
-static void BrowserManagerThread(obs_data_t *settings, obs_source_t *source)
+static void BrowserManagerThread(obs_data_t *settings)
 {
-	BrowserInit(settings, source);
+	BrowserInit(settings;
 	CefRunMessageLoop();
 	BrowserShutdown();
 }
 #endif
 
-extern "C" EXPORT void obs_browser_initialize(obs_data_t* settings, obs_source_t* source)
+extern "C" EXPORT void obs_browser_initialize(obs_data_t* settings)
 {
 	if (!os_atomic_set_bool(&manager_initialized, true)) {
 #ifdef USE_UI_LOOP
 		blog(LOG_INFO, "obs_browser_initialize, using UI_LOOP, call BrowserInit");
-		BrowserInit(settings, source);
+		BrowserInit(settings);
 #else
-		 blog(LOG_INFO, "obs_browser_initialize, NOT using UI_LOOP");
-		auto binded_fn = bind(BrowserManagerThread, settings, source);
+		blog(LOG_INFO, "obs_browser_initialize, NOT using UI_LOOP");
+		auto binded_fn = bind(BrowserManagerThread, settings);
 		manager_thread = thread(binded_fn);
 #endif
 	} else {
@@ -416,7 +416,7 @@ void RegisterBrowserSource()
 	info.create = [](obs_data_t *settings, obs_source_t *source) -> void * {
         blog(LOG_INFO, "Browser Source, INIT via info.create , settings %p source %p", settings, source);
 
-        obs_browser_initialize(settings, source);
+        obs_browser_initialize(settings);
         if (manager_initialized && app) {
             bool enabled = obs_data_get_bool(settings, "is_media_flag");
             app->AddFlag(enabled);
@@ -433,13 +433,12 @@ void RegisterBrowserSource()
 		delete static_cast<BrowserSource *>(data);
 	};
 	info.update = [](void *data, obs_data_t *settings) {
-        BrowserSource *bs = static_cast<BrowserSource *>(data);
-        if (app) {
-            bool enabled = obs_data_get_bool(settings, "is_media_flag");
-            app->media_flag = enabled ? 1 : 0;
-        }
-        
-        bs->Update(settings);
+		BrowserSource *bs = static_cast<BrowserSource *>(data);
+		if (app) {
+			bool enabled = obs_data_get_bool(settings, "is_media_flag");
+			app->media_flag = enabled ? 1 : 0;
+		}
+		bs->Update(settings);
 	};
 	info.get_width = [](void *data) {
 		return (uint32_t) static_cast<BrowserSource *>(data)->width;
