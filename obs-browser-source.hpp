@@ -87,7 +87,6 @@ struct BrowserSource {
 	void ClearAudioStreams();
 	void ExecuteOnBrowser(BrowserFunc func, bool async = false);
 
-
 	/* ---------------------------- */
 
 	BrowserSource(obs_data_t *settings, obs_source_t *source);
