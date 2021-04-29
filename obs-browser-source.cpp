@@ -159,8 +159,6 @@ bool BrowserSource::CreateBrowser()
 #else
 		bool hwaccel = false;
 #endif
-
-	blog(LOG_INFO, "BrowserSource::CreateBrowser(), creating new browser client");
 	CefRefPtr<BrowserClient> browserClient = new BrowserClient(this, hwaccel && tex_sharing_avail, reroute_audio);
 	CefWindowInfo windowInfo;
 #if CHROME_VERSION_BUILD < 3071
@@ -512,15 +510,11 @@ void BrowserSource::Update(obs_data_t *settings)
 			n_is_local = true;
 		}
 #endif
-
-        blog(LOG_INFO, "Browsersource::Update, n_is_media_flag != is_media_flag", n_is_media_flag, is_media_flag);
 		if (n_is_local == is_local && n_width == width &&
 		    n_height == height && n_fps_custom == fps_custom &&
 		    n_fps == fps && n_shutdown == shutdown_on_invisible &&
 		    n_restart == restart && n_css == css && n_url == url &&
 		    n_reroute == reroute_audio && n_is_media_flag == is_media_flag) {
-            
-			blog(LOG_INFO, "Browsersource::Update, same settings", n_is_media_flag, is_media_flag);
 			return;
 		}
 

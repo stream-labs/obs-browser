@@ -157,7 +157,6 @@ static bool is_mediaflag_modified(obs_properties_t *props, obs_property_t *,
 				   obs_data_t *settings)
 {
 	bool enabled = obs_data_get_bool(settings, "is_media_flag");
-	blog(LOG_INFO, "Media flag enabled: %d", enabled);
 	return true;
 }
 
@@ -177,8 +176,6 @@ static obs_properties_t *browser_source_get_properties(void *data)
 	BrowserSource *bs = static_cast<BrowserSource *>(data);
     
 	DStr path;
-
-	blog(LOG_INFO, "browser_source_get_properties");
 
 	obs_properties_set_flags(props, OBS_PROPERTIES_DEFER_UPDATE);
 	obs_property_t *prop = obs_properties_add_bool(props, "is_local_file", obs_module_text("LocalFile"));
