@@ -174,7 +174,6 @@ static obs_properties_t *browser_source_get_properties(void *data)
 {
 	obs_properties_t *props = obs_properties_create();
 	BrowserSource *bs = static_cast<BrowserSource *>(data);
-    
 	DStr path;
 
 	obs_properties_set_flags(props, OBS_PROPERTIES_DEFER_UPDATE);
