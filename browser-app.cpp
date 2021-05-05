@@ -90,7 +90,7 @@ void BrowserApp::OnBeforeChildProcessLaunch(
         bool flag = media_flags.front();
         media_flags.pop();
         if (flag) {
-		command_line->AppendSwitchWithValue("enable-media-stream", "1");
+	command_line->AppendSwitchWithValue("enable-media-stream", "1");
         }
     }
 }
