@@ -19,16 +19,17 @@
 #pragma once
 
 #include <map>
+#include <queue>
 #include <unordered_map>
 #include <functional>
 #include "cef-headers.hpp"
+#include <mutex>
 
 typedef std::function<void(CefRefPtr<CefBrowser>)> BrowserFunc;
 
 #if  defined(USE_UI_LOOP) && defined(WIN32)
 #include <QObject>
 #include <QTimer>
-#include <mutex>
 #include <deque>
 
 typedef std::function<void()> MessageTask;
@@ -80,10 +81,14 @@ class BrowserApp : public CefApp,
 
 public:
 	inline BrowserApp(bool shared_texture_available_ = false)
-		: shared_texture_available(shared_texture_available_)
+		: shared_texture_available(shared_texture_available_), media_flag(-1)
 	{
 	}
 
+	void AddFlag(bool flag);
+	int media_flag;
+	std::mutex flag_mutex;
+	std::queue<bool> media_flags;
 	virtual CefRefPtr<CefRenderProcessHandler>
 	GetRenderProcessHandler() override;
 	virtual CefRefPtr<CefBrowserProcessHandler>
