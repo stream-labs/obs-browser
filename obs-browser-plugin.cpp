@@ -56,8 +56,9 @@ OBS_MODULE_USE_DEFAULT_LOCALE("obs-browser", "en-US")
 using namespace std;
 using namespace json11;
 
-static thread manager_thread;
 static bool manager_initialized = false;
+static thread manager_thread;
+static CefRefPtr<BrowserApp> app;
 os_event_t *cef_started_event = nullptr;
 
 static int adapterCount = 0;
@@ -115,7 +116,6 @@ margin: 0px auto; \
 overflow: hidden; \
 }";
 
-static CefRefPtr<BrowserApp> app;
 
 static void browser_source_get_defaults(obs_data_t *settings)
 {
@@ -234,7 +234,6 @@ static obs_properties_t *browser_source_get_properties(void *data)
 
 static void BrowserInit(obs_data_t *settings_obs)
 {
-    
 #if defined(__APPLE__) && defined(USE_UI_LOOP)
 	ExecuteSyncTask([settings_obs]() {
 #endif
@@ -252,10 +251,12 @@ static void BrowserInit(obs_data_t *settings_obs)
 #endif
 
 		CefSettings settings;
-		settings.log_severity = LOGSEVERITY_DISABLE;
+		settings.log_severity = LOGSEVERITY_DEBUG;
+		CefString(&settings.log_file) = CefString(L"C:\\temp\\cef.txt");
+
 		settings.windowless_rendering_enabled = true;
 		settings.no_sandbox = true;
-		settings.command_line_args_disabled = false;
+		settings.command_line_args_disabled = false;		
 #ifdef USE_UI_LOOP
 		settings.external_message_pump = true;
 		settings.multi_threaded_message_loop = false;
@@ -371,8 +372,10 @@ static void BrowserShutdown(void)
 static void BrowserManagerThread(obs_data_t *settings)
 {
 	BrowserInit(settings);
-	CefRunMessageLoop();
-	BrowserShutdown();
+	
+		CefRunMessageLoop();
+		BrowserShutdown();
+	
 }
 #endif
 
@@ -410,20 +413,18 @@ void RegisterBrowserSource()
 	info.get_name = [](void *) { return obs_module_text("BrowserSource"); };
 	blog(LOG_INFO, "RegisterBrowserSource");
 	info.create = [](obs_data_t *settings, obs_source_t *source) -> void * {
-        blog(LOG_INFO, "Browser Source, INIT via info.create , settings %p source %p", settings, source);
+		blog(LOG_INFO, "Browser Source, INIT via info.create , settings %p source %p", settings, source);
 
-        obs_browser_initialize(settings);
-        if (manager_initialized && app) {
-            bool enabled = obs_data_get_bool(settings, "is_media_flag");
-            app->AddFlag(enabled);
-        }
+		obs_browser_initialize(settings);
+		if (manager_initialized && app) {
+		    bool enabled = obs_data_get_bool(settings, "is_media_flag");
+		    app->AddFlag(enabled);
+		}
 
-        obs_source_set_audio_mixers(source, 0xFF);
-        obs_source_set_monitoring_type(source, OBS_MONITORING_TYPE_MONITOR_ONLY);
-        BrowserSource *bs = new BrowserSource(settings, source);
-        blog(LOG_INFO, "Browserapp pointer: %p", app.get());
-        
-        return bs;
+		obs_source_set_audio_mixers(source, 0xFF);
+		obs_source_set_monitoring_type(source, OBS_MONITORING_TYPE_MONITOR_ONLY);
+		BrowserSource *bs = new BrowserSource(settings, source);        
+		return bs;
 	};
 	info.destroy = [](void *data) {
 		delete static_cast<BrowserSource *>(data);

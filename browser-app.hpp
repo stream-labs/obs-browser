@@ -131,7 +131,10 @@ public:
 					bool isVisible);
 	void SetDocumentVisibility(CefRefPtr<CefBrowser> browser,
 				   bool isVisible);
+
 #endif
+	void DisableMediaStream(CefRefPtr<CefBrowser> browser,
+				CefRefPtr<CefFrame> frame);
 
 	IMPLEMENT_REFCOUNTING(BrowserApp);
 };

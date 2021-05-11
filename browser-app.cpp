@@ -78,21 +78,62 @@ void BrowserApp::OnBeforeChildProcessLaunch(
 	command_line->AppendSwitchWithValue("parent_pid", pid);
 #else
 #endif
+	CefString type = command_line->GetSwitchValue("type");
+	if (type.ToString() != std::string("utility") && type.ToString() != std::string("gpu-process")) {
+		std::lock_guard<std::mutex> guard(flag_mutex);
+		bool isMediaDisabled = false;
 
-    std::lock_guard<std::mutex> guard(flag_mutex);
-    if (this->media_flag != -1) {
-        if (this->media_flag) {
-            command_line->AppendSwitchWithValue("enable-media-stream", "1");
-        }
-        this->media_flag = -1;
-    }
-    else if (this->media_flags.size()) {
-        bool flag = media_flags.front();
-        media_flags.pop();
-        if (flag) {
-            command_line->AppendSwitchWithValue("enable-media-stream", "1");
-        }
-    }
+		if (this->media_flag != -1) {
+			if (this->media_flag) {
+				command_line->AppendSwitchWithValue("enable-media-stream", "1");
+			} else {
+				isMediaDisabled = true;
+				//command_line->AppendSwitchWithValue("disable-media-stream", "1");
+				command_line->AppendSwitchWithValue("use-fake-device-for-media-stream", "1");
+				command_line->AppendSwitchWithValue("use-file-for-fake-video-capture", "c:\\temp\\motion.mjpeg");
+				command_line->AppendSwitchWithValue("use-file-for-fake-audio-capture", "c:\\temp\\motion.wav");
+				command_line->AppendSwitchWithValue("allow-file-access-from-files", "1");
+				command_line->AppendSwitchWithValue("use-fake-ui-for-media-stream", "1");
+				command_line->AppendSwitch("disable-dev-shm-usage");
+			}
+			this->media_flag = -1;
+		} else if (this->media_flags.size()) {
+				bool flag = media_flags.front();
+				media_flags.pop();
+				if (flag) {
+					command_line->AppendSwitchWithValue("enable-media-stream", "1");
+				} else {
+					isMediaDisabled = true;
+				//command_line->AppendSwitchWithValue("disable-media-stream", "1");
+				command_line->AppendSwitchWithValue("use-fake-device-for-media-stream", "1");
+				command_line->AppendSwitchWithValue("use-file-for-fake-video-capture", "c:\\temp\\motion.mjpeg");
+				command_line->AppendSwitchWithValue("use-file-for-fake-audio-capture", "c:\\temp\\motion.wav");
+				command_line->AppendSwitchWithValue("allow-file-access-from-files", "1");
+				command_line->AppendSwitchWithValue("use-fake-ui-for-media-stream", "1");
+				command_line->AppendSwitch("disable-dev-shm-usage");
+			}
+		}
+	}
+
+  
+		if (command_line->HasSwitch("disable-features")) {
+			//Don't override existing, as this can break OSR
+			std::string disableFeatures = command_line->GetSwitchValue("disable-features");
+			disableFeatures += ",HardwareMediaKeyHandling"
+#ifdef __APPLE__
+			       ",NetworkService"
+#endif
+			;
+			command_line->AppendSwitchWithValue("disable-features",
+						disableFeatures);
+			} else {
+				std::string toAppend = "HardwareMediaKeyHandling";
+				command_line->AppendSwitchWithValue("disable-features", toAppend
+#ifdef __APPLE__
+						",NetworkService"
+#endif
+				);
+			}
 }
 
 void BrowserApp::OnBeforeCommandLineProcessing(
@@ -108,42 +149,7 @@ void BrowserApp::OnBeforeCommandLineProcessing(
 		}
 	}
 
-	if (command_line->HasSwitch("disable-features")) {
-		// Don't override existing, as this can break OSR
-		std::string disableFeatures =
-			command_line->GetSwitchValue("disable-features");
-		disableFeatures += ",HardwareMediaKeyHandling"
-#ifdef __APPLE__
-				   ",NetworkService"
-#endif
-			;
-		command_line->AppendSwitchWithValue("disable-features",
-						    disableFeatures);
-	} else {
-		command_line->AppendSwitchWithValue("disable-features",
-						    "HardwareMediaKeyHandling"
-#ifdef __APPLE__
-						    ",NetworkService"
-#endif
-		);
-	}
-
-	command_line->AppendSwitchWithValue("autoplay-policy",
-					    "no-user-gesture-required");
-
-	std::lock_guard<std::mutex> guard(flag_mutex);
-	if (this->media_flag != -1) {
-			if (this->media_flag) {
-					command_line->AppendSwitchWithValue("enable-media-stream", "1");
-			}
-			this->media_flag = -1;
-	} else if (this->media_flags.size()) {
-			bool flag = media_flags.front();
-			media_flags.pop();
-			if (flag) {
-				command_line->AppendSwitchWithValue("enable-media-stream", "1");
-			}
-	}
+	command_line->AppendSwitchWithValue("autoplay-policy","no-user-gesture-required");
 }
 
 void BrowserApp::OnContextCreated(CefRefPtr<CefBrowser> browser,
@@ -153,28 +159,19 @@ void BrowserApp::OnContextCreated(CefRefPtr<CefBrowser> browser,
 	CefRefPtr<CefV8Value> globalObj = context->GetGlobal();
 
 	CefRefPtr<CefV8Value> obsStudioObj = CefV8Value::CreateObject(0, 0);
-	globalObj->SetValue("obsstudio", obsStudioObj,
-			    V8_PROPERTY_ATTRIBUTE_NONE);
+	globalObj->SetValue("obsstudio", obsStudioObj, V8_PROPERTY_ATTRIBUTE_NONE);
 
-	CefRefPtr<CefV8Value> pluginVersion =
-		CefV8Value::CreateString(OBS_BROWSER_VERSION_STRING);
-	obsStudioObj->SetValue("pluginVersion", pluginVersion,
-			       V8_PROPERTY_ATTRIBUTE_NONE);
+	CefRefPtr<CefV8Value> pluginVersion = CefV8Value::CreateString(OBS_BROWSER_VERSION_STRING);
+	obsStudioObj->SetValue("pluginVersion", pluginVersion, V8_PROPERTY_ATTRIBUTE_NONE);
 
-	CefRefPtr<CefV8Value> getCurrentScene =
-		CefV8Value::CreateFunction("getCurrentScene", this);
-	obsStudioObj->SetValue("getCurrentScene", getCurrentScene,
-			       V8_PROPERTY_ATTRIBUTE_NONE);
+	CefRefPtr<CefV8Value> getCurrentScene = CefV8Value::CreateFunction("getCurrentScene", this);
+	obsStudioObj->SetValue("getCurrentScene", getCurrentScene, V8_PROPERTY_ATTRIBUTE_NONE);
 
-	CefRefPtr<CefV8Value> getStatus =
-		CefV8Value::CreateFunction("getStatus", this);
-	obsStudioObj->SetValue("getStatus", getStatus,
-			       V8_PROPERTY_ATTRIBUTE_NONE);
+	CefRefPtr<CefV8Value> getStatus = CefV8Value::CreateFunction("getStatus", this);
+	obsStudioObj->SetValue("getStatus", getStatus, V8_PROPERTY_ATTRIBUTE_NONE);
 
-	CefRefPtr<CefV8Value> saveReplayBuffer =
-		CefV8Value::CreateFunction("saveReplayBuffer", this);
-	obsStudioObj->SetValue("saveReplayBuffer", saveReplayBuffer,
-			       V8_PROPERTY_ATTRIBUTE_NONE);
+	CefRefPtr<CefV8Value> saveReplayBuffer = CefV8Value::CreateFunction("saveReplayBuffer", this);
+	obsStudioObj->SetValue("saveReplayBuffer", saveReplayBuffer, V8_PROPERTY_ATTRIBUTE_NONE);
 
 #if !ENABLE_WASHIDDEN
 	int id = browser->GetIdentifier();
@@ -210,6 +207,7 @@ void BrowserApp::SetFrameDocumentVisibility(CefRefPtr<CefBrowser> browser,
 {
 	CefRefPtr<CefV8Context> context = frame->GetV8Context();
 
+	B
 	context->Enter();
 
 	CefRefPtr<CefV8Value> globalObj = context->GetGlobal();
@@ -249,6 +247,36 @@ void BrowserApp::SetFrameDocumentVisibility(CefRefPtr<CefBrowser> browser,
 			dispatchEvent->ExecuteFunction(documentObject,
 						       arguments);
 		}
+	}
+
+	context->Exit();
+}
+
+
+void BrowserApp::DisableMediaStream(CefRefPtr<CefBrowser> browser,
+					    CefRefPtr<CefFrame> frame)
+{
+	return;
+	CefRefPtr<CefV8Context> context = frame->GetV8Context();
+
+	context->Enter();
+
+	CefRefPtr<CefV8Value> globalObj = context->GetGlobal();
+
+	CefRefPtr<CefV8Value> documentObject = globalObj->GetValue("document");
+
+	if (!!documentObject) {
+		std::string script =
+			"navigator.mediaDevices.getUserMedia({audio:true,video:true}).then(stream => { stream.getTracks().forEach((track) => { track.stop(); }); }).catch((err) => { console.log(err); });";
+
+		CefRefPtr<CefV8Value> returnValue;
+		CefRefPtr<CefV8Exception> exception;
+
+		/* Create the CustomEvent object
+		 * We have to use eval to invoke the new operator */
+		context->Eval(script, frame->GetURL(), 0,
+					     returnValue, exception);
+
 	}
 
 	context->Exit();
@@ -297,6 +325,8 @@ bool BrowserApp::OnProcessMessageReceived(CefRefPtr<CefBrowser> browser,
 	DCHECK(source_process == PID_BROWSER);
 
 	CefRefPtr<CefListValue> args = message->GetArgumentList();
+
+	//this->DisableMediaStream(browser, frame);
 
 	if (message->GetName() == "Visibility") {
 		CefV8ValueList arguments;
